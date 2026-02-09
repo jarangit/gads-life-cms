@@ -49,6 +49,15 @@ npm run lint     # Run ESLint
 
 // Layout
 <PageHeader title="Page Title" actions={<Button>Action</Button>} />
+
+// Stats Summary (Mini Dashboard)
+<StatsSummary 
+  stats={[
+    { label: 'Total', value: 10, icon: <Package />, color: 'blue' },
+    { label: 'Published', value: 5, icon: <CheckCircle />, color: 'green' },
+  ]} 
+  className="mb-6 grid-cols-3" 
+/>
 ```
 
 ## Coding Conventions

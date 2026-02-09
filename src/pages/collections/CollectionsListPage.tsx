@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Pencil, Trash2, ListOrdered } from 'lucide-react'
+import { Plus, Pencil, Trash2, ListOrdered, CheckCircle, FileText, Package } from 'lucide-react'
 import {
   Button,
   Table,
@@ -16,7 +16,7 @@ import {
   Badge,
   Select,
 } from '@/components/ui'
-import { PageHeader, StatusBadge, DeleteConfirmModal, useDeleteModal } from '@/components/common'
+import { PageHeader, StatusBadge, DeleteConfirmModal, useDeleteModal, StatsSummary } from '@/components/common'
 import type { Collection, ContentStatus, CollectionType } from '@/types'
 
 // Mock data for demo
@@ -103,6 +103,40 @@ export function CollectionsListPage() {
     return matchesSearch && matchesStatus
   })
 
+  // Calculate stats
+  const stats = useMemo(() => {
+    const published = collections.filter((c) => c.status === 'published').length
+    const draft = collections.filter((c) => c.status === 'draft').length
+    const totalItems = collections.reduce((sum, c) => sum + c.items.length, 0)
+
+    return [
+      {
+        label: 'Total Collections',
+        value: collections.length,
+        icon: <ListOrdered className="h-5 w-5" />,
+        color: 'blue' as const,
+      },
+      {
+        label: 'Published',
+        value: published,
+        icon: <CheckCircle className="h-5 w-5" />,
+        color: 'green' as const,
+      },
+      {
+        label: 'Draft',
+        value: draft,
+        icon: <FileText className="h-5 w-5" />,
+        color: 'yellow' as const,
+      },
+      {
+        label: 'Total Items',
+        value: totalItems,
+        icon: <Package className="h-5 w-5" />,
+        color: 'purple' as const,
+      },
+    ]
+  }, [collections])
+
   const totalPages = Math.ceil(filteredCollections.length / itemsPerPage)
   const paginatedCollections = filteredCollections.slice(
     (currentPage - 1) * itemsPerPage,
@@ -133,6 +167,9 @@ export function CollectionsListPage() {
           </Button>
         }
       />
+
+      {/* Stats Summary */}
+      <StatsSummary stats={stats} className="mb-6 grid-cols-2 lg:grid-cols-4" />
 
       <Card>
         <div className="border-b border-slate-200 p-4">

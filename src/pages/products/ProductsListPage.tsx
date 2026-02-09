@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Pencil, Trash2, Package, Eye, Archive, Send } from 'lucide-react'
+import { Plus, Pencil, Trash2, Package, Eye, Archive, Send, FileText, CheckCircle, Star } from 'lucide-react'
 import {
   Button,
   Table,
@@ -18,7 +18,7 @@ import {
   DropdownItem,
   DropdownDivider,
 } from '@/components/ui'
-import { PageHeader, StatusBadge, DeleteConfirmModal, useDeleteModal } from '@/components/common'
+import { PageHeader, StatusBadge, DeleteConfirmModal, useDeleteModal, StatsSummary } from '@/components/common'
 import type { Product, ContentStatus } from '@/types'
 
 // Mock data for demo
@@ -136,6 +136,43 @@ export function ProductsListPage() {
     return matchesSearch && matchesStatus
   })
 
+  // Calculate stats
+  const stats = useMemo(() => {
+    const published = products.filter((p) => p.status === 'published').length
+    const draft = products.filter((p) => p.status === 'draft').length
+    const avgRating =
+      products.length > 0
+        ? products.reduce((sum, p) => sum + (p.rating || 0), 0) / products.filter((p) => p.rating).length
+        : 0
+
+    return [
+      {
+        label: 'Total Products',
+        value: products.length,
+        icon: <Package className="h-5 w-5" />,
+        color: 'blue' as const,
+      },
+      {
+        label: 'Published',
+        value: published,
+        icon: <CheckCircle className="h-5 w-5" />,
+        color: 'green' as const,
+      },
+      {
+        label: 'Draft',
+        value: draft,
+        icon: <FileText className="h-5 w-5" />,
+        color: 'yellow' as const,
+      },
+      {
+        label: 'Avg. Rating',
+        value: avgRating ? avgRating.toFixed(1) : '—',
+        icon: <Star className="h-5 w-5" />,
+        color: 'purple' as const,
+      },
+    ]
+  }, [products])
+
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
   const paginatedProducts = filteredProducts.slice(
     (currentPage - 1) * itemsPerPage,
@@ -189,6 +226,9 @@ export function ProductsListPage() {
           </Button>
         }
       />
+
+      {/* Stats Summary */}
+      <StatsSummary stats={stats} className="mb-6 grid-cols-2 lg:grid-cols-4" />
 
       <Card>
         <div className="border-b border-slate-200 p-4">

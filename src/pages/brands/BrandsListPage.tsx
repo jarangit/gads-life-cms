@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Pencil, Trash2, Building2, ExternalLink } from 'lucide-react'
+import { Plus, Pencil, Trash2, Building2, ExternalLink, Image, Globe } from 'lucide-react'
 import {
   Button,
   Table,
@@ -14,7 +14,7 @@ import {
   EmptyState,
   Card,
 } from '@/components/ui'
-import { PageHeader, DeleteConfirmModal, useDeleteModal } from '@/components/common'
+import { PageHeader, DeleteConfirmModal, useDeleteModal, StatsSummary } from '@/components/common'
 import type { Brand } from '@/types'
 
 // Mock data for demo
@@ -77,6 +77,33 @@ export function BrandsListPage() {
     brand.name.toLowerCase().includes(search.toLowerCase())
   )
 
+  // Calculate stats
+  const stats = useMemo(() => {
+    const withLogo = brands.filter((b) => b.logo).length
+    const withWebsite = brands.filter((b) => b.websiteUrl).length
+
+    return [
+      {
+        label: 'Total Brands',
+        value: brands.length,
+        icon: <Building2 className="h-5 w-5" />,
+        color: 'blue' as const,
+      },
+      {
+        label: 'With Logo',
+        value: withLogo,
+        icon: <Image className="h-5 w-5" />,
+        color: 'green' as const,
+      },
+      {
+        label: 'With Website',
+        value: withWebsite,
+        icon: <Globe className="h-5 w-5" />,
+        color: 'purple' as const,
+      },
+    ]
+  }, [brands])
+
   const totalPages = Math.ceil(filteredBrands.length / itemsPerPage)
   const paginatedBrands = filteredBrands.slice(
     (currentPage - 1) * itemsPerPage,
@@ -101,6 +128,9 @@ export function BrandsListPage() {
           </Button>
         }
       />
+
+      {/* Stats Summary */}
+      <StatsSummary stats={stats} className="mb-6 grid-cols-3" />
 
       <Card>
         <div className="border-b border-slate-200 p-4">

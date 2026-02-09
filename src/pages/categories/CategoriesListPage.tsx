@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Pencil, Trash2, FolderTree } from 'lucide-react'
+import { Plus, Pencil, Trash2, FolderTree, Layers, GitBranch } from 'lucide-react'
 import {
   Button,
   Table,
@@ -14,7 +14,7 @@ import {
   EmptyState,
   Card,
 } from '@/components/ui'
-import { PageHeader, DeleteConfirmModal, useDeleteModal } from '@/components/common'
+import { PageHeader, DeleteConfirmModal, useDeleteModal, StatsSummary } from '@/components/common'
 import type { Category } from '@/types'
 
 // Mock data for demo
@@ -78,6 +78,33 @@ export function CategoriesListPage() {
     category.name.toLowerCase().includes(search.toLowerCase())
   )
 
+  // Calculate stats
+  const stats = useMemo(() => {
+    const topLevel = categories.filter((c) => !c.parentId).length
+    const subCategories = categories.filter((c) => c.parentId).length
+
+    return [
+      {
+        label: 'Total Categories',
+        value: categories.length,
+        icon: <FolderTree className="h-5 w-5" />,
+        color: 'blue' as const,
+      },
+      {
+        label: 'Top Level',
+        value: topLevel,
+        icon: <Layers className="h-5 w-5" />,
+        color: 'green' as const,
+      },
+      {
+        label: 'Sub-categories',
+        value: subCategories,
+        icon: <GitBranch className="h-5 w-5" />,
+        color: 'purple' as const,
+      },
+    ]
+  }, [categories])
+
   const totalPages = Math.ceil(filteredCategories.length / itemsPerPage)
   const paginatedCategories = filteredCategories.slice(
     (currentPage - 1) * itemsPerPage,
@@ -108,6 +135,9 @@ export function CategoriesListPage() {
           </Button>
         }
       />
+
+      {/* Stats Summary */}
+      <StatsSummary stats={stats} className="mb-6 grid-cols-3" />
 
       <Card>
         <div className="border-b border-slate-200 p-4">

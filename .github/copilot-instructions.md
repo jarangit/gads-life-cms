@@ -60,6 +60,22 @@ src/
 - `EmptyState` - Empty state placeholder
 - `LoadingSpinner` - Loading indicator
 
+### StatsSummary Component (Mini Dashboard)
+```tsx
+import { StatsSummary, type StatItem } from '@/components/common'
+import { Package, CheckCircle, FileText } from 'lucide-react'
+
+const stats: StatItem[] = [
+  { label: 'Total', value: 10, icon: <Package className="h-5 w-5" />, color: 'blue' },
+  { label: 'Published', value: 5, icon: <CheckCircle className="h-5 w-5" />, color: 'green' },
+  { label: 'Draft', value: 3, icon: <FileText className="h-5 w-5" />, color: 'yellow' },
+]
+
+<StatsSummary stats={stats} className="mb-6 grid-cols-3" />
+```
+
+**Available colors**: `default`, `blue`, `green`, `yellow`, `red`, `purple`
+
 ## Styling Conventions
 
 ### Color Palette (Tailwind)

@@ -1,0 +1,5 @@
+export { DashboardPage } from './dashboard'
+export { CategoriesListPage, CategoryFormPage } from './categories'
+export { BrandsListPage, BrandFormPage } from './brands'
+export { ProductsListPage, ProductFormPage } from './products'
+export { CollectionsListPage, CollectionFormPage } from './collections'

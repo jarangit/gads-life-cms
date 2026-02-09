@@ -1,0 +1,5 @@
+export { BasicInfoTab } from './BasicInfoTab'
+export { ProsConsTab } from './ProsConsTab'
+export { SpecsTab } from './SpecsTab'
+export { AffiliateLinksTab } from './AffiliateLinksTab'
+export { JsonImportTab, getJsonTemplate } from './JsonImportTab'

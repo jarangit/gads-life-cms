@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   Plus,
@@ -6,7 +6,7 @@ import {
   Trash2,
   FolderTree,
   Layers,
-  GitBranch,
+  CheckCircle,
 } from "lucide-react";
 import {
   Button,
@@ -27,76 +27,34 @@ import {
   useDeleteModal,
   StatsSummary,
 } from "@/components/common";
-import type { Category } from "@/types";
 import { useCategories } from "@/api/queries/category/list";
 
-// Mock data for demo
-const mockCategories: Category[] = [
-  {
-    id: "1",
-    name: "Laptops",
-    slug: "laptops",
-    description: "All laptop reviews",
-    parentId: null,
-    createdAt: "2024-01-15T10:00:00Z",
-    updatedAt: "2024-01-15T10:00:00Z",
-  },
-  {
-    id: "2",
-    name: "Gaming Laptops",
-    slug: "gaming-laptops",
-    description: "Gaming laptop reviews",
-    parentId: "1",
-    createdAt: "2024-01-16T10:00:00Z",
-    updatedAt: "2024-01-16T10:00:00Z",
-  },
-  {
-    id: "3",
-    name: "Smartphones",
-    slug: "smartphones",
-    description: "Smartphone reviews",
-    parentId: null,
-    createdAt: "2024-01-17T10:00:00Z",
-    updatedAt: "2024-01-17T10:00:00Z",
-  },
-  {
-    id: "4",
-    name: "Audio",
-    slug: "audio",
-    description: "Audio equipment reviews",
-    parentId: null,
-    createdAt: "2024-01-18T10:00:00Z",
-    updatedAt: "2024-01-18T10:00:00Z",
-  },
-];
-
 export function CategoriesListPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const deleteModal = useDeleteModal();
 
   const itemsPerPage = 10;
 
-  // use query to fetch categories from API
-  const { data, isLoading } = useCategories(); // Replace with actual query hook
-  console.log("🚀 ~ CategoriesListPage ~ data:", data)
+  const { data, isLoading } = useCategories();
 
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setCategories(mockCategories);
-    }, 500);
-  }, []);
+  const categories = useMemo(() => data ?? [], [data]);
 
-  const filteredCategories = categories.filter((category) =>
-    category.name.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filteredCategories = useMemo(() => {
+    if (!search) return categories;
+    const searchLower = search.toLowerCase();
+    return categories.filter(
+      (category) =>
+        category.nameEn?.toLowerCase().includes(searchLower) ||
+        category.nameTh?.toLowerCase().includes(searchLower) ||
+        category.slug?.toLowerCase().includes(searchLower),
+    );
+  }, [categories, search]);
 
   // Calculate stats
   const stats = useMemo(() => {
-    const topLevel = categories.filter((c) => !c.parentId).length;
-    const subCategories = categories.filter((c) => c.parentId).length;
+    const activeCount = categories.filter((c) => c.isActive === 1).length;
+    const inactiveCount = categories.filter((c) => c.isActive !== 1).length;
 
     return [
       {
@@ -106,16 +64,16 @@ export function CategoriesListPage() {
         color: "blue" as const,
       },
       {
-        label: "Top Level",
-        value: topLevel,
-        icon: <Layers className="h-5 w-5" />,
+        label: "Active",
+        value: activeCount,
+        icon: <CheckCircle className="h-5 w-5" />,
         color: "green" as const,
       },
       {
-        label: "Sub-categories",
-        value: subCategories,
-        icon: <GitBranch className="h-5 w-5" />,
-        color: "purple" as const,
+        label: "Inactive",
+        value: inactiveCount,
+        icon: <Layers className="h-5 w-5" />,
+        color: "yellow" as const,
       },
     ];
   }, [categories]);
@@ -126,15 +84,9 @@ export function CategoriesListPage() {
     currentPage * itemsPerPage,
   );
 
-  const getParentName = (parentId: string | null | undefined) => {
-    if (!parentId) return "—";
-    const parent = categories.find((c) => c.id === parentId);
-    return parent?.name || "—";
-  };
-
   const handleDelete = () => {
     if (deleteModal.itemId) {
-      setCategories((prev) => prev.filter((c) => c.id !== deleteModal.itemId));
+      // TODO: Implement delete mutation
       deleteModal.closeModal();
     }
   };
@@ -203,7 +155,8 @@ export function CategoriesListPage() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Slug</TableHead>
-                  <TableHead>Parent</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Order</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -211,15 +164,28 @@ export function CategoriesListPage() {
                 {paginatedCategories.map((category) => (
                   <TableRow key={category.id}>
                     <TableCell>
-                      <div>
-                        <p className="font-medium text-slate-900">
-                          {category.name}
-                        </p>
-                        {category.description && (
-                          <p className="text-sm text-slate-500 line-clamp-1">
-                            {category.description}
-                          </p>
+                      <div className="flex items-center gap-3">
+                        {category.heroImage ? (
+                          <img
+                            src={category.heroImage}
+                            alt={category.nameEn || category.nameTh || category.slug}
+                            className="h-10 w-10 rounded-lg border border-slate-200 object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50">
+                            <FolderTree className="h-4 w-4 text-slate-400" />
+                          </div>
                         )}
+                        <div>
+                          <p className="font-medium text-slate-900">
+                            {category.nameEn || category.nameTh || category.slug}
+                          </p>
+                          {category.nameTh && category.nameEn && (
+                            <p className="text-sm text-slate-500">
+                              {category.nameTh}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -227,8 +193,19 @@ export function CategoriesListPage() {
                         {category.slug}
                       </code>
                     </TableCell>
+                    <TableCell>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                          category.isActive === 1
+                            ? "bg-green-50 text-green-700"
+                            : "bg-slate-100 text-slate-600"
+                        }`}
+                      >
+                        {category.isActive === 1 ? "Active" : "Inactive"}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-slate-500">
-                      {getParentName(category.parentId)}
+                      {category.orderIndex}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">

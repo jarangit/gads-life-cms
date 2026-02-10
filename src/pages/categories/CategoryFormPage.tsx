@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useForm, Controller } from 'react-hook-form'
 import { ArrowLeft } from 'lucide-react'
 import {
   Button,
@@ -53,20 +54,37 @@ export function CategoryFormPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
 
-  const [formData, setFormData] = useState<CategoryFormData>({
-    name: '',
-    slug: '',
-    parentId: null,
-    description: '',
-    coverImage: '',
-    seo: {
-      metaTitle: '',
-      metaDescription: '',
-      ogImage: '',
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<CategoryFormData>({
+    defaultValues: {
+      name: '',
+      slug: '',
+      parentId: null,
+      description: '',
+      coverImage: '',
+      seo: {
+        metaTitle: '',
+        metaDescription: '',
+        ogImage: '',
+      },
     },
   })
 
-  const [errors, setErrors] = useState<Partial<Record<keyof CategoryFormData, string>>>({})
+  // Watch name field to auto-generate slug
+  const nameValue = watch('name')
+
+  useEffect(() => {
+    if (!isEditing && nameValue !== undefined) {
+      setValue('slug', generateSlug(nameValue))
+    }
+  }, [nameValue, isEditing, setValue])
 
   useEffect(() => {
     // Load parent categories
@@ -78,7 +96,7 @@ export function CategoryFormPage() {
       setTimeout(() => {
         const category = mockCategories.find((c) => c.id === id)
         if (category) {
-          setFormData({
+          reset({
             name: category.name,
             slug: category.slug,
             parentId: category.parentId,
@@ -90,56 +108,9 @@ export function CategoryFormPage() {
         setIsLoading(false)
       }, 300)
     }
-  }, [id, isEditing])
+  }, [id, isEditing, reset])
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target
-    setFormData((prev) => {
-      const newData = { ...prev, [name]: value }
-      // Auto-generate slug from name
-      if (name === 'name' && !isEditing) {
-        newData.slug = generateSlug(value)
-      }
-      return newData
-    })
-    // Clear error when user types
-    if (errors[name as keyof CategoryFormData]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }))
-    }
-  }
-
-  const handleSeoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      seo: { ...prev.seo, [name]: value },
-    }))
-  }
-
-  const validate = (): boolean => {
-    const newErrors: Partial<Record<keyof CategoryFormData, string>> = {}
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required'
-    }
-
-    if (!formData.slug.trim()) {
-      newErrors.slug = 'Slug is required'
-    } else if (!/^[a-z0-9-]+$/.test(formData.slug)) {
-      newErrors.slug = 'Slug can only contain lowercase letters, numbers, and hyphens'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!validate()) return
-
+  const onSubmit = async (_data: CategoryFormData) => {
     setIsSaving(true)
     // Simulate API call
     setTimeout(() => {
@@ -179,7 +150,7 @@ export function CategoryFormPage() {
         }
       />
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Main Content */}
           <div className="space-y-6 lg:col-span-2">
@@ -190,38 +161,37 @@ export function CategoryFormPage() {
               <CardContent className="space-y-4">
                 <Input
                   label="Name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  error={errors.name}
                   placeholder="e.g., Gaming Laptops"
+                  error={errors.name?.message}
+                  {...register('name', { required: 'Name is required' })}
                 />
 
                 <Input
                   label="Slug"
-                  name="slug"
-                  value={formData.slug}
-                  onChange={handleChange}
-                  error={errors.slug}
                   hint="URL-friendly identifier"
                   placeholder="e.g., gaming-laptops"
+                  error={errors.slug?.message}
+                  {...register('slug', {
+                    required: 'Slug is required',
+                    pattern: {
+                      value: /^[a-z0-9-]+$/,
+                      message:
+                        'Slug can only contain lowercase letters, numbers, and hyphens',
+                    },
+                  })}
                 />
 
                 <Select
                   label="Parent Category"
-                  name="parentId"
-                  value={formData.parentId || ''}
-                  onChange={handleChange}
                   options={parentOptions}
+                  {...register('parentId')}
                 />
 
                 <Textarea
                   label="Description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
                   placeholder="Brief description of this category"
                   rows={3}
+                  {...register('description')}
                 />
               </CardContent>
             </Card>
@@ -233,19 +203,15 @@ export function CategoryFormPage() {
               <CardContent className="space-y-4">
                 <Input
                   label="Meta Title"
-                  name="metaTitle"
-                  value={formData.seo?.metaTitle || ''}
-                  onChange={handleSeoChange}
                   placeholder="SEO title for search engines"
+                  {...register('seo.metaTitle')}
                 />
 
                 <Textarea
                   label="Meta Description"
-                  name="metaDescription"
-                  value={formData.seo?.metaDescription || ''}
-                  onChange={handleSeoChange}
                   placeholder="SEO description for search engines"
                   rows={2}
+                  {...register('seo.metaDescription')}
                 />
               </CardContent>
             </Card>
@@ -258,12 +224,16 @@ export function CategoryFormPage() {
                 <CardTitle>Cover Image</CardTitle>
               </CardHeader>
               <CardContent>
-                <ImageUpload
-                  value={formData.coverImage}
-                  onChange={(url) =>
-                    setFormData((prev) => ({ ...prev, coverImage: url || '' }))
-                  }
-                  hint="Recommended: 1200x630px"
+                <Controller
+                  name="coverImage"
+                  control={control}
+                  render={({ field }) => (
+                    <ImageUpload
+                      value={field.value}
+                      onChange={(url) => field.onChange(url || '')}
+                      hint="Recommended: 1200x630px"
+                    />
+                  )}
                 />
               </CardContent>
             </Card>

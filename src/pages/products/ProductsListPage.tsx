@@ -37,7 +37,7 @@ import {
   StatsSummary,
 } from "@/components/common";
 import type { ContentStatus } from "@/types";
-import { useProducts } from "@/api/queries/product";
+import { useProducts } from "@/api/queries/product/product";
 import type { ProductItemResponse } from "@/api/types/product";
 
 export function ProductsListPage() {
@@ -131,7 +131,10 @@ export function ProductsListPage() {
 
   const formatPrice = (product: ProductItemResponse) => {
     if (!product.price) return "—";
-    return product.priceLabel || `${product.currency} ${product.price.toLocaleString()}`;
+    return (
+      product.priceLabel ||
+      `${product.currency} ${product.price.toLocaleString()}`
+    );
   };
 
   const getOverallScore = (product: ProductItemResponse) => {
@@ -258,7 +261,9 @@ export function ProductsListPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-slate-600">
-                        {product.category?.nameEn || product.category?.nameTh || "—"}
+                        {product.category?.nameEn ||
+                          product.category?.nameTh ||
+                          "—"}
                       </TableCell>
                       <TableCell className="text-slate-600">
                         {formatPrice(product)}
@@ -299,9 +304,9 @@ export function ProductsListPage() {
                                   handleStatusChange(product.id, "published")
                                 }
                               >
-                              <Send className="mr-2 h-4 w-4" />
-                              Publish
-                            </DropdownItem>
+                                <Send className="mr-2 h-4 w-4" />
+                                Publish
+                              </DropdownItem>
                             )}
                             {product.status !== "draft" && (
                               <DropdownItem

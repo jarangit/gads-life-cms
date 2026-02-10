@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { ArrowLeft, FileJson } from 'lucide-react'
+import { useState } from "react";
+import { useParams } from "react-router-dom";
+import { ArrowLeft, FileJson } from "lucide-react";
 import {
   Button,
   Select,
@@ -9,8 +9,8 @@ import {
   CardHeader,
   CardTitle,
   CardContent,
-} from '@/components/ui'
-import { PageHeader } from '@/components/common'
+} from "@/components/ui";
+import { PageHeader } from "@/components/common";
 import {
   BasicInfoTab,
   ProsConsTab,
@@ -18,25 +18,28 @@ import {
   AffiliateLinksTab,
   JsonImportTab,
   getJsonTemplate,
-} from '@/components/products'
-import { useProductForm } from '@/hooks'
-import { statusOptions } from '@/mocks/products'
+} from "@/components/products";
+import { useProductForm } from "@/hooks";
+import { statusOptions } from "@/mocks/products";
+import { useProductDetail } from "@/api/queries/product/detail";
 
-type TabId = 'basic' | 'content' | 'specs' | 'links' | 'json'
+type TabId = "basic" | "content" | "specs" | "links" | "json";
 
 const tabs: { id: TabId; label: string; icon?: React.ReactNode }[] = [
-  { id: 'basic', label: 'Basic Info' },
-  { id: 'content', label: 'Pros & Cons' },
-  { id: 'specs', label: 'Specifications' },
-  { id: 'links', label: 'Affiliate Links' },
-  { id: 'json', label: 'Import JSON', icon: <FileJson className="h-4 w-4" /> },
-]
+  { id: "basic", label: "Basic Info" },
+  { id: "content", label: "Pros & Cons" },
+  { id: "specs", label: "Specifications" },
+  { id: "links", label: "Affiliate Links" },
+  { id: "json", label: "Import JSON", icon: <FileJson className="h-4 w-4" /> },
+];
 
 export function ProductFormPage() {
-  const { id } = useParams()
-  const [activeTab, setActiveTab] = useState<TabId>('basic')
-  const [jsonInput, setJsonInput] = useState('')
-  const [jsonError, setJsonError] = useState<string | null>(null)
+  const { id } = useParams();
+  const [activeTab, setActiveTab] = useState<TabId>("basic");
+  const [jsonInput, setJsonInput] = useState("");
+  const [jsonError, setJsonError] = useState<string | null>(null);
+  const { data } = useProductDetail(id as string);
+  console.log("🚀 ~ ProductFormPage ~ data:", data)
 
   const {
     formData,
@@ -63,35 +66,37 @@ export function ProductFormPage() {
     toggleCategory,
     importFromJson,
     navigate,
-  } = useProductForm(id)
+  } = useProductForm(id);
 
   const handleJsonImport = () => {
-    setJsonError(null)
-    const error = importFromJson(jsonInput)
+    setJsonError(null);
+    const error = importFromJson(jsonInput);
     if (error) {
-      setJsonError(error)
+      setJsonError(error);
     } else {
-      setActiveTab('basic')
+      setActiveTab("basic");
     }
-  }
+  };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
       </div>
-    )
+    );
   }
 
   return (
     <div>
       <PageHeader
-        title={isEditing ? 'Edit Product' : 'New Product'}
-        description={isEditing ? 'Update product review' : 'Create a new product review'}
+        title={isEditing ? "Edit Product" : "New Product"}
+        description={
+          isEditing ? "Update product review" : "Create a new product review"
+        }
         actions={
           <Button
             variant="ghost"
-            onClick={() => navigate('/products')}
+            onClick={() => navigate("/products")}
             leftIcon={<ArrowLeft className="h-4 w-4" />}
           >
             Back
@@ -113,8 +118,8 @@ export function ProductFormPage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center gap-1.5 border-b-2 pb-3 text-sm font-medium transition-colors ${
                       activeTab === tab.id
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'
+                        ? "border-blue-600 text-blue-600"
+                        : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
                     }`}
                   >
                     {tab.icon}
@@ -125,18 +130,18 @@ export function ProductFormPage() {
             </div>
 
             {/* Tab Content */}
-            {activeTab === 'basic' && (
+            {activeTab === "basic" && (
               <BasicInfoTab
                 formData={formData}
                 errors={errors}
                 onChange={handleChange}
                 onCategoryToggle={toggleCategory}
-                onPriceChange={(value) => updateField('price', value)}
-                onRatingChange={(value) => updateField('rating', value)}
+                onPriceChange={(value) => updateField("price", value)}
+                onRatingChange={(value) => updateField("rating", value)}
               />
             )}
 
-            {activeTab === 'content' && (
+            {activeTab === "content" && (
               <ProsConsTab
                 pros={formData.pros}
                 cons={formData.cons}
@@ -149,7 +154,7 @@ export function ProductFormPage() {
               />
             )}
 
-            {activeTab === 'specs' && (
+            {activeTab === "specs" && (
               <SpecsTab
                 specs={formData.specs}
                 onSpecChange={handleSpecChange}
@@ -158,7 +163,7 @@ export function ProductFormPage() {
               />
             )}
 
-            {activeTab === 'links' && (
+            {activeTab === "links" && (
               <AffiliateLinksTab
                 links={formData.affiliateLinks}
                 onLinkChange={handleLinkChange}
@@ -167,7 +172,7 @@ export function ProductFormPage() {
               />
             )}
 
-            {activeTab === 'json' && (
+            {activeTab === "json" && (
               <JsonImportTab
                 jsonInput={jsonInput}
                 jsonError={jsonError}
@@ -175,8 +180,8 @@ export function ProductFormPage() {
                 onImport={handleJsonImport}
                 onLoadTemplate={() => setJsonInput(getJsonTemplate())}
                 onClear={() => {
-                  setJsonInput('')
-                  setJsonError(null)
+                  setJsonInput("");
+                  setJsonError(null);
                 }}
               />
             )}
@@ -205,7 +210,7 @@ export function ProductFormPage() {
               <CardContent>
                 <ImageUpload
                   value={formData.heroImage}
-                  onChange={(url) => updateField('heroImage', url || '')}
+                  onChange={(url) => updateField("heroImage", url || "")}
                   hint="Recommended: 1200x800px"
                 />
               </CardContent>
@@ -215,9 +220,9 @@ export function ProductFormPage() {
               <CardContent className="pt-6">
                 <div className="flex flex-col gap-3">
                   <Button type="submit" isLoading={isSaving} className="w-full">
-                    {isEditing ? 'Update Product' : 'Save as Draft'}
+                    {isEditing ? "Update Product" : "Save as Draft"}
                   </Button>
-                  {formData.status === 'draft' && (
+                  {formData.status === "draft" && (
                     <Button
                       type="button"
                       variant="outline"
@@ -231,7 +236,7 @@ export function ProductFormPage() {
                   <Button
                     type="button"
                     variant="ghost"
-                    onClick={() => navigate('/products')}
+                    onClick={() => navigate("/products")}
                     className="w-full"
                   >
                     Cancel
@@ -243,5 +248,5 @@ export function ProductFormPage() {
         </div>
       </form>
     </div>
-  )
+  );
 }

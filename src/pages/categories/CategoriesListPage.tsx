@@ -1,6 +1,13 @@
-import { useState, useEffect, useMemo } from 'react'
-import { Link } from 'react-router-dom'
-import { Plus, Pencil, Trash2, FolderTree, Layers, GitBranch } from 'lucide-react'
+import { useState, useEffect, useMemo } from "react";
+import { Link } from "react-router-dom";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  FolderTree,
+  Layers,
+  GitBranch,
+} from "lucide-react";
 import {
   Button,
   Table,
@@ -13,116 +20,124 @@ import {
   Pagination,
   EmptyState,
   Card,
-} from '@/components/ui'
-import { PageHeader, DeleteConfirmModal, useDeleteModal, StatsSummary } from '@/components/common'
-import type { Category } from '@/types'
+} from "@/components/ui";
+import {
+  PageHeader,
+  DeleteConfirmModal,
+  useDeleteModal,
+  StatsSummary,
+} from "@/components/common";
+import type { Category } from "@/types";
+import { useCategories } from "@/api/queries/category/list";
 
 // Mock data for demo
 const mockCategories: Category[] = [
   {
-    id: '1',
-    name: 'Laptops',
-    slug: 'laptops',
-    description: 'All laptop reviews',
+    id: "1",
+    name: "Laptops",
+    slug: "laptops",
+    description: "All laptop reviews",
     parentId: null,
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
+    createdAt: "2024-01-15T10:00:00Z",
+    updatedAt: "2024-01-15T10:00:00Z",
   },
   {
-    id: '2',
-    name: 'Gaming Laptops',
-    slug: 'gaming-laptops',
-    description: 'Gaming laptop reviews',
-    parentId: '1',
-    createdAt: '2024-01-16T10:00:00Z',
-    updatedAt: '2024-01-16T10:00:00Z',
+    id: "2",
+    name: "Gaming Laptops",
+    slug: "gaming-laptops",
+    description: "Gaming laptop reviews",
+    parentId: "1",
+    createdAt: "2024-01-16T10:00:00Z",
+    updatedAt: "2024-01-16T10:00:00Z",
   },
   {
-    id: '3',
-    name: 'Smartphones',
-    slug: 'smartphones',
-    description: 'Smartphone reviews',
+    id: "3",
+    name: "Smartphones",
+    slug: "smartphones",
+    description: "Smartphone reviews",
     parentId: null,
-    createdAt: '2024-01-17T10:00:00Z',
-    updatedAt: '2024-01-17T10:00:00Z',
+    createdAt: "2024-01-17T10:00:00Z",
+    updatedAt: "2024-01-17T10:00:00Z",
   },
   {
-    id: '4',
-    name: 'Audio',
-    slug: 'audio',
-    description: 'Audio equipment reviews',
+    id: "4",
+    name: "Audio",
+    slug: "audio",
+    description: "Audio equipment reviews",
     parentId: null,
-    createdAt: '2024-01-18T10:00:00Z',
-    updatedAt: '2024-01-18T10:00:00Z',
+    createdAt: "2024-01-18T10:00:00Z",
+    updatedAt: "2024-01-18T10:00:00Z",
   },
-]
+];
 
 export function CategoriesListPage() {
-  const [categories, setCategories] = useState<Category[]>([])
-  const [search, setSearch] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [isLoading, setIsLoading] = useState(true)
-  const deleteModal = useDeleteModal()
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const deleteModal = useDeleteModal();
 
-  const itemsPerPage = 10
+  const itemsPerPage = 10;
+
+  // use query to fetch categories from API
+  const { data, isLoading } = useCategories(); // Replace with actual query hook
+  console.log("🚀 ~ CategoriesListPage ~ data:", data)
 
   useEffect(() => {
     // Simulate API call
     setTimeout(() => {
-      setCategories(mockCategories)
-      setIsLoading(false)
-    }, 500)
-  }, [])
+      setCategories(mockCategories);
+    }, 500);
+  }, []);
 
   const filteredCategories = categories.filter((category) =>
-    category.name.toLowerCase().includes(search.toLowerCase())
-  )
+    category.name.toLowerCase().includes(search.toLowerCase()),
+  );
 
   // Calculate stats
   const stats = useMemo(() => {
-    const topLevel = categories.filter((c) => !c.parentId).length
-    const subCategories = categories.filter((c) => c.parentId).length
+    const topLevel = categories.filter((c) => !c.parentId).length;
+    const subCategories = categories.filter((c) => c.parentId).length;
 
     return [
       {
-        label: 'Total Categories',
+        label: "Total Categories",
         value: categories.length,
         icon: <FolderTree className="h-5 w-5" />,
-        color: 'blue' as const,
+        color: "blue" as const,
       },
       {
-        label: 'Top Level',
+        label: "Top Level",
         value: topLevel,
         icon: <Layers className="h-5 w-5" />,
-        color: 'green' as const,
+        color: "green" as const,
       },
       {
-        label: 'Sub-categories',
+        label: "Sub-categories",
         value: subCategories,
         icon: <GitBranch className="h-5 w-5" />,
-        color: 'purple' as const,
+        color: "purple" as const,
       },
-    ]
-  }, [categories])
+    ];
+  }, [categories]);
 
-  const totalPages = Math.ceil(filteredCategories.length / itemsPerPage)
+  const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
   const paginatedCategories = filteredCategories.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  )
+    currentPage * itemsPerPage,
+  );
 
   const getParentName = (parentId: string | null | undefined) => {
-    if (!parentId) return '—'
-    const parent = categories.find((c) => c.id === parentId)
-    return parent?.name || '—'
-  }
+    if (!parentId) return "—";
+    const parent = categories.find((c) => c.id === parentId);
+    return parent?.name || "—";
+  };
 
   const handleDelete = () => {
     if (deleteModal.itemId) {
-      setCategories((prev) => prev.filter((c) => c.id !== deleteModal.itemId))
-      deleteModal.closeModal()
+      setCategories((prev) => prev.filter((c) => c.id !== deleteModal.itemId));
+      deleteModal.closeModal();
     }
-  }
+  };
 
   return (
     <div>
@@ -130,7 +145,11 @@ export function CategoriesListPage() {
         title="Categories"
         description="Manage product categories"
         actions={
-          <Button as={Link} to="/categories/new" leftIcon={<Plus className="h-4 w-4" />}>
+          <Button
+            as={Link}
+            to="/categories/new"
+            leftIcon={<Plus className="h-4 w-4" />}
+          >
             Add Category
           </Button>
         }
@@ -146,7 +165,7 @@ export function CategoriesListPage() {
               placeholder="Search categories..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              onClear={() => setSearch('')}
+              onClear={() => setSearch("")}
               className="w-full sm:w-72"
             />
           </div>
@@ -162,12 +181,16 @@ export function CategoriesListPage() {
             title="No categories found"
             description={
               search
-                ? 'Try adjusting your search'
-                : 'Get started by creating your first category'
+                ? "Try adjusting your search"
+                : "Get started by creating your first category"
             }
             action={
               !search && (
-                <Button as={Link} to="/categories/new" leftIcon={<Plus className="h-4 w-4" />}>
+                <Button
+                  as={Link}
+                  to="/categories/new"
+                  leftIcon={<Plus className="h-4 w-4" />}
+                >
                   Add Category
                 </Button>
               )
@@ -189,7 +212,9 @@ export function CategoriesListPage() {
                   <TableRow key={category.id}>
                     <TableCell>
                       <div>
-                        <p className="font-medium text-slate-900">{category.name}</p>
+                        <p className="font-medium text-slate-900">
+                          {category.name}
+                        </p>
                         {category.description && (
                           <p className="text-sm text-slate-500 line-clamp-1">
                             {category.description}
@@ -247,5 +272,5 @@ export function CategoriesListPage() {
         message="Are you sure you want to delete this category? Products in this category will not be deleted but will need to be reassigned."
       />
     </div>
-  )
+  );
 }

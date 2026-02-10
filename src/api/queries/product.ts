@@ -1,15 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { qk } from "./key";
 import { http } from "../http";
-export type Product = {
-  id: string;
-  name: string;
-  slug: string;
-  status: "draft" | "published";
-};
+import type { ProductItemResponse } from "../types/product";
 
 export type ProductListResponse = {
-  items: Product[];
+  items: ProductItemResponse[];
   total: number;
 };
 

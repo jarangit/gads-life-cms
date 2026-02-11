@@ -38,6 +38,7 @@ import {
 } from "@/components/common";
 import type { ContentStatus } from "@/types";
 import { useProducts } from "@/api/queries/product/product";
+import { useDeleteProduct } from "@/api/queries/product/mutation";
 import type { ProductItemResponse } from "@/api/types/product";
 
 export function ProductsListPage() {
@@ -45,6 +46,7 @@ export function ProductsListPage() {
   const [statusFilter, setStatusFilter] = useState<ContentStatus | "">("");
   const [currentPage, setCurrentPage] = useState(1);
   const deleteModal = useDeleteModal();
+  const deleteProduct = useDeleteProduct();
 
   const itemsPerPage = 10;
 
@@ -111,8 +113,11 @@ export function ProductsListPage() {
 
   const handleDelete = () => {
     if (deleteModal.itemId) {
-      // TODO: Implement delete mutation
-      deleteModal.closeModal();
+      deleteProduct.mutate(deleteModal.itemId, {
+        onSuccess: () => {
+          deleteModal.closeModal();
+        },
+      });
     }
   };
 
@@ -364,6 +369,7 @@ export function ProductsListPage() {
         onConfirm={handleDelete}
         title="Delete Product"
         message="Are you sure you want to delete this product? This will also remove it from any collections."
+        isLoading={deleteProduct.isPending}
       />
     </div>
   );

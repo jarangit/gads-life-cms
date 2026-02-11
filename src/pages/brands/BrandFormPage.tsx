@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useForm, Controller } from 'react-hook-form'
 import { ArrowLeft } from 'lucide-react'
 import {
   Button,
@@ -11,29 +12,9 @@ import {
   CardContent,
 } from '@/components/ui'
 import { PageHeader } from '@/components/common'
-import type { Brand, BrandFormData } from '@/types'
-
-// Mock data for demo
-const mockBrands: Brand[] = [
-  {
-    id: '1',
-    name: 'Apple',
-    slug: 'apple',
-    logo: 'https://placehold.co/100x100',
-    websiteUrl: 'https://apple.com',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
-  },
-  {
-    id: '2',
-    name: 'Samsung',
-    slug: 'samsung',
-    logo: 'https://placehold.co/100x100',
-    websiteUrl: 'https://samsung.com',
-    createdAt: '2024-01-16T10:00:00Z',
-    updatedAt: '2024-01-16T10:00:00Z',
-  },
-]
+import { useBrand } from '@/api/queries/brands/detail'
+import { useCreateBrand, useUpdateBrand } from '@/api/queries/brands/multation'
+import type { ICreateBrandPayload } from '@/api/types/brand'
 
 function generateSlug(name: string): string {
   return name
@@ -47,94 +28,61 @@ export function BrandFormPage() {
   const { id } = useParams()
   const isEditing = Boolean(id)
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
+  const { data: brand, isLoading } = useBrand(id)
+  const createBrand = useCreateBrand()
+  const updateBrand = useUpdateBrand(id ?? '')
 
-  const [formData, setFormData] = useState<BrandFormData>({
-    name: '',
-    slug: '',
-    logo: '',
-    websiteUrl: '',
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<ICreateBrandPayload>({
+    defaultValues: {
+      name: '',
+      slug: '',
+      logoUrl: null,
+      canonicalUrl: null,
+    },
   })
 
-  const [errors, setErrors] = useState<Partial<Record<keyof BrandFormData, string>>>({})
+  // Watch name to auto-generate slug
+  const nameValue = watch('name')
 
   useEffect(() => {
-    if (isEditing) {
-      setIsLoading(true)
-      // Simulate API call to get brand
-      setTimeout(() => {
-        const brand = mockBrands.find((b) => b.id === id)
-        if (brand) {
-          setFormData({
-            name: brand.name,
-            slug: brand.slug,
-            logo: brand.logo || '',
-            websiteUrl: brand.websiteUrl || '',
-          })
-        }
-        setIsLoading(false)
-      }, 300)
+    if (!isEditing && nameValue !== undefined) {
+      setValue('slug', generateSlug(nameValue))
     }
-  }, [id, isEditing])
+  }, [nameValue, isEditing, setValue])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => {
-      const newData = { ...prev, [name]: value }
-      // Auto-generate slug from name
-      if (name === 'name' && !isEditing) {
-        newData.slug = generateSlug(value)
-      }
-      return newData
-    })
-    // Clear error when user types
-    if (errors[name as keyof BrandFormData]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }))
+  // Populate form when brand data loads (edit mode)
+  useEffect(() => {
+    if (brand) {
+      reset({
+        name: brand.name,
+        slug: brand.slug,
+        logoUrl: brand.logoUrl,
+        canonicalUrl: brand.canonicalUrl,
+      })
     }
-  }
+  }, [brand, reset])
 
-  const validate = (): boolean => {
-    const newErrors: Partial<Record<keyof BrandFormData, string>> = {}
+  const isSaving = createBrand.isPending || updateBrand.isPending
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required'
-    }
-
-    if (!formData.slug.trim()) {
-      newErrors.slug = 'Slug is required'
-    } else if (!/^[a-z0-9-]+$/.test(formData.slug)) {
-      newErrors.slug = 'Slug can only contain lowercase letters, numbers, and hyphens'
-    }
-
-    if (formData.websiteUrl && !isValidUrl(formData.websiteUrl)) {
-      newErrors.websiteUrl = 'Please enter a valid URL'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const isValidUrl = (url: string): boolean => {
+  const onSubmit = async (data: ICreateBrandPayload) => {
     try {
-      new URL(url)
-      return true
-    } catch {
-      return false
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!validate()) return
-
-    setIsSaving(true)
-    // Simulate API call
-    setTimeout(() => {
-      setIsSaving(false)
+      if (isEditing) {
+        await updateBrand.mutateAsync(data)
+      } else {
+        await createBrand.mutateAsync(data)
+      }
       navigate('/brands')
-    }, 500)
+    } catch (error) {
+      console.error('Failed to save brand:', error)
+    }
   }
 
   if (isLoading) {
@@ -161,7 +109,7 @@ export function BrandFormPage() {
         }
       />
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Main Content */}
           <div className="space-y-6 lg:col-span-2">
@@ -172,31 +120,41 @@ export function BrandFormPage() {
               <CardContent className="space-y-4">
                 <Input
                   label="Name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  error={errors.name}
                   placeholder="e.g., Apple"
+                  error={errors.name?.message}
+                  {...register('name', { required: 'Name is required' })}
                 />
 
                 <Input
                   label="Slug"
-                  name="slug"
-                  value={formData.slug}
-                  onChange={handleChange}
-                  error={errors.slug}
                   hint="URL-friendly identifier"
                   placeholder="e.g., apple"
+                  error={errors.slug?.message}
+                  {...register('slug', {
+                    required: 'Slug is required',
+                    pattern: {
+                      value: /^[a-z0-9-]+$/,
+                      message: 'Slug can only contain lowercase letters, numbers, and hyphens',
+                    },
+                  })}
                 />
 
                 <Input
                   label="Website URL"
-                  name="websiteUrl"
                   type="url"
-                  value={formData.websiteUrl}
-                  onChange={handleChange}
-                  error={errors.websiteUrl}
                   placeholder="https://example.com"
+                  error={errors.canonicalUrl?.message}
+                  {...register('canonicalUrl', {
+                    validate: (value) => {
+                      if (!value) return true
+                      try {
+                        new URL(value)
+                        return true
+                      } catch {
+                        return 'Please enter a valid URL'
+                      }
+                    },
+                  })}
                 />
               </CardContent>
             </Card>
@@ -209,12 +167,16 @@ export function BrandFormPage() {
                 <CardTitle>Logo</CardTitle>
               </CardHeader>
               <CardContent>
-                <ImageUpload
-                  value={formData.logo}
-                  onChange={(url) =>
-                    setFormData((prev) => ({ ...prev, logo: url || '' }))
-                  }
-                  hint="Recommended: 200x200px, PNG with transparency"
+                <Controller
+                  name="logoUrl"
+                  control={control}
+                  render={({ field }) => (
+                    <ImageUpload
+                      value={field.value ?? undefined}
+                      onChange={(url) => field.onChange(url || null)}
+                      hint="Recommended: 200x200px, PNG with transparency"
+                    />
+                  )}
                 />
               </CardContent>
             </Card>

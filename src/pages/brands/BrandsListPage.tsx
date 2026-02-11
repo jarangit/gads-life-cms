@@ -1,6 +1,13 @@
-import { useState, useEffect, useMemo } from 'react'
-import { Link } from 'react-router-dom'
-import { Plus, Pencil, Trash2, Building2, ExternalLink, Image, Globe } from 'lucide-react'
+import { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Building2,
+  Image,
+  Globe,
+} from "lucide-react";
 import {
   Button,
   Table,
@@ -13,109 +20,72 @@ import {
   Pagination,
   EmptyState,
   Card,
-} from '@/components/ui'
-import { PageHeader, DeleteConfirmModal, useDeleteModal, StatsSummary } from '@/components/common'
-import type { Brand } from '@/types'
-
-// Mock data for demo
-const mockBrands: Brand[] = [
-  {
-    id: '1',
-    name: 'Apple',
-    slug: 'apple',
-    logo: 'https://placehold.co/100x100',
-    websiteUrl: 'https://apple.com',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
-  },
-  {
-    id: '2',
-    name: 'Samsung',
-    slug: 'samsung',
-    logo: 'https://placehold.co/100x100',
-    websiteUrl: 'https://samsung.com',
-    createdAt: '2024-01-16T10:00:00Z',
-    updatedAt: '2024-01-16T10:00:00Z',
-  },
-  {
-    id: '3',
-    name: 'Sony',
-    slug: 'sony',
-    websiteUrl: 'https://sony.com',
-    createdAt: '2024-01-17T10:00:00Z',
-    updatedAt: '2024-01-17T10:00:00Z',
-  },
-  {
-    id: '4',
-    name: 'Dell',
-    slug: 'dell',
-    logo: 'https://placehold.co/100x100',
-    websiteUrl: 'https://dell.com',
-    createdAt: '2024-01-18T10:00:00Z',
-    updatedAt: '2024-01-18T10:00:00Z',
-  },
-]
+} from "@/components/ui";
+import {
+  PageHeader,
+  DeleteConfirmModal,
+  useDeleteModal,
+  StatsSummary,
+} from "@/components/common";
+import { useBrands } from "@/api/queries/brands/list";
+import { useDeleteBrand } from "@/api/queries/brands/multation";
 
 export function BrandsListPage() {
-  const [brands, setBrands] = useState<Brand[]>([])
-  const [search, setSearch] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [isLoading, setIsLoading] = useState(true)
-  const deleteModal = useDeleteModal()
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const deleteModal = useDeleteModal();
 
-  const itemsPerPage = 10
+  const { data: brands = [], isLoading } = useBrands();
+  const deleteBrand = useDeleteBrand();
 
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setBrands(mockBrands)
-      setIsLoading(false)
-    }, 500)
-  }, [])
+  const itemsPerPage = 10;
 
   const filteredBrands = brands.filter((brand) =>
-    brand.name.toLowerCase().includes(search.toLowerCase())
-  )
+    brand.name.toLowerCase().includes(search.toLowerCase()),
+  );
 
   // Calculate stats
   const stats = useMemo(() => {
-    const withLogo = brands.filter((b) => b.logo).length
-    const withWebsite = brands.filter((b) => b.websiteUrl).length
+    const withLogo = brands.filter((b) => b.logoUrl).length;
+    const withWebsite = brands.filter((b) => b.canonicalUrl).length;
 
     return [
       {
-        label: 'Total Brands',
+        label: "Total Brands",
         value: brands.length,
         icon: <Building2 className="h-5 w-5" />,
-        color: 'blue' as const,
+        color: "blue" as const,
       },
       {
-        label: 'With Logo',
+        label: "With Logo",
         value: withLogo,
         icon: <Image className="h-5 w-5" />,
-        color: 'green' as const,
+        color: "green" as const,
       },
       {
-        label: 'With Website',
+        label: "With Website",
         value: withWebsite,
         icon: <Globe className="h-5 w-5" />,
-        color: 'purple' as const,
+        color: "purple" as const,
       },
-    ]
-  }, [brands])
+    ];
+  }, [brands]);
 
-  const totalPages = Math.ceil(filteredBrands.length / itemsPerPage)
+  const totalPages = Math.ceil(filteredBrands.length / itemsPerPage);
   const paginatedBrands = filteredBrands.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  )
+    currentPage * itemsPerPage,
+  );
 
   const handleDelete = () => {
     if (deleteModal.itemId) {
-      setBrands((prev) => prev.filter((b) => b.id !== deleteModal.itemId))
-      deleteModal.closeModal()
+      deleteBrand.mutate(deleteModal.itemId, {
+        onSuccess: () => {
+          deleteModal.closeModal();
+        },
+      });
     }
-  }
+  };
 
   return (
     <div>
@@ -123,7 +93,11 @@ export function BrandsListPage() {
         title="Brands"
         description="Manage product brands"
         actions={
-          <Button as={Link} to="/brands/new" leftIcon={<Plus className="h-4 w-4" />}>
+          <Button
+            as={Link}
+            to="/brands/new"
+            leftIcon={<Plus className="h-4 w-4" />}
+          >
             Add Brand
           </Button>
         }
@@ -139,7 +113,7 @@ export function BrandsListPage() {
               placeholder="Search brands..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              onClear={() => setSearch('')}
+              onClear={() => setSearch("")}
               className="w-full sm:w-72"
             />
           </div>
@@ -155,12 +129,16 @@ export function BrandsListPage() {
             title="No brands found"
             description={
               search
-                ? 'Try adjusting your search'
-                : 'Get started by adding your first brand'
+                ? "Try adjusting your search"
+                : "Get started by adding your first brand"
             }
             action={
               !search && (
-                <Button as={Link} to="/brands/new" leftIcon={<Plus className="h-4 w-4" />}>
+                <Button
+                  as={Link}
+                  to="/brands/new"
+                  leftIcon={<Plus className="h-4 w-4" />}
+                >
                   Add Brand
                 </Button>
               )
@@ -182,9 +160,9 @@ export function BrandsListPage() {
                   <TableRow key={brand.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        {brand.logo ? (
+                        {brand.logoUrl ? (
                           <img
-                            src={brand.logo}
+                            src={brand.logoUrl}
                             alt={brand.name}
                             className="h-10 w-10 rounded-lg border border-slate-200 object-contain p-1"
                           />
@@ -193,7 +171,9 @@ export function BrandsListPage() {
                             <Building2 className="h-5 w-5 text-slate-400" />
                           </div>
                         )}
-                        <span className="font-medium text-slate-900">{brand.name}</span>
+                        <span className="font-medium text-slate-900">
+                          {brand.name}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -202,15 +182,14 @@ export function BrandsListPage() {
                       </code>
                     </TableCell>
                     <TableCell>
-                      {brand.websiteUrl ? (
+                      {brand.canonicalUrl ? (
                         <a
-                          href={brand.websiteUrl}
+                          href={brand.canonicalUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
                         >
-                          {new URL(brand.websiteUrl).hostname}
-                          <ExternalLink className="h-3 w-3" />
+                          {brand.canonicalUrl}
                         </a>
                       ) : (
                         <span className="text-slate-400">—</span>
@@ -258,5 +237,5 @@ export function BrandsListPage() {
         message="Are you sure you want to delete this brand? Products from this brand will need to be reassigned."
       />
     </div>
-  )
+  );
 }

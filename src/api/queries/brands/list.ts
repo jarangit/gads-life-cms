@@ -1,7 +1,7 @@
 import { http } from "@/api/http";
 import { qk } from "../key";
-import { useQuery } from "@tanstack/react-query";
 import type { IBrandItem } from "@/api/types/brand";
+import { useQuery } from "@tanstack/react-query";
 
 interface ApiResponse {
   success: boolean;
@@ -11,10 +11,10 @@ interface ApiResponse {
   };
 }
 
-export const useCategories = () => {
+export const useBrands = () => {
   return useQuery({
-    queryKey: qk.categories(),
-    queryFn: () => http<ApiResponse>("/admin/category"),
+    queryKey: qk.brands(),
+    queryFn: () => http<ApiResponse>("/admin/brands"),
     select: (response) => response.data.items,
   });
 };

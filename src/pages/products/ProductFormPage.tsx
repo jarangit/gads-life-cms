@@ -21,7 +21,6 @@ import {
 } from "@/components/products";
 import { useProductForm } from "@/hooks";
 import { statusOptions } from "@/mocks/products";
-import { useProductDetail } from "@/api/queries/product/detail";
 
 type TabId = "basic" | "content" | "specs" | "links" | "json";
 
@@ -38,8 +37,6 @@ export function ProductFormPage() {
   const [activeTab, setActiveTab] = useState<TabId>("basic");
   const [jsonInput, setJsonInput] = useState("");
   const [jsonError, setJsonError] = useState<string | null>(null);
-  const { data } = useProductDetail(id as string);
-  console.log("🚀 ~ ProductFormPage ~ data:", data)
 
   const {
     formData,

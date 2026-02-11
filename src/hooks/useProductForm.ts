@@ -2,7 +2,12 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ProductFormData, AffiliateLink } from '@/types'
 import { generateSlug, generateId } from '@/utils'
-import { mockProduct } from '@/mocks/products'
+import { useProductDetail } from '@/api/queries/product/detail'
+import {
+  useCreateProduct,
+  useUpdateProduct,
+  type CreateProductPayload,
+} from '@/api/queries/product/mutation'
 
 const initialFormData: ProductFormData = {
   name: '',
@@ -26,37 +31,39 @@ export function useProductForm(id?: string) {
   const navigate = useNavigate()
   const isEditing = Boolean(id)
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
+  const { data: productDetail, isLoading } = useProductDetail(id ?? '')
+  const createProduct = useCreateProduct()
+  const updateProduct = useUpdateProduct(id ?? '')
+
   const [formData, setFormData] = useState<ProductFormData>(initialFormData)
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormData, string>>>({})
 
-  // Load existing product data
+  const isSaving = createProduct.isPending || updateProduct.isPending
+
+  // Load existing product data from API
   useEffect(() => {
-    if (isEditing) {
-      setIsLoading(true)
-      setTimeout(() => {
-        setFormData({
-          name: mockProduct.name,
-          slug: mockProduct.slug,
-          brandId: mockProduct.brandId,
-          categoryIds: mockProduct.categoryIds,
-          shortDescription: mockProduct.shortDescription || '',
-          sections: mockProduct.sections,
-          pros: mockProduct.pros.length ? mockProduct.pros : [''],
-          cons: mockProduct.cons.length ? mockProduct.cons : [''],
-          specs: mockProduct.specs.length ? mockProduct.specs : [{ key: '', value: '' }],
-          rating: mockProduct.rating,
-          price: mockProduct.price,
-          heroImage: mockProduct.heroImage || '',
-          galleryImages: mockProduct.galleryImages,
-          affiliateLinks: mockProduct.affiliateLinks,
-          status: mockProduct.status,
-        })
-        setIsLoading(false)
-      }, 300)
+    if (isEditing && productDetail) {
+      setFormData({
+        name: productDetail.name || '',
+        slug: '',
+        brandId: productDetail.brandId || '',
+        categoryIds: productDetail.categoryId ? [productDetail.categoryId] : [],
+        shortDescription: productDetail.subtitle || '',
+        sections: [],
+        pros: [''],
+        cons: [''],
+        specs: [{ key: '', value: '' }],
+        rating: productDetail.overallScore ? Number(productDetail.overallScore) : undefined,
+        price: productDetail.price,
+        heroImage: productDetail.image || '',
+        galleryImages: [],
+        affiliateLinks: productDetail.affiliateLink
+          ? [{ id: generateId(), merchant: '', url: productDetail.affiliateLink, price: undefined, note: '' }]
+          : [],
+        status: (productDetail.status as 'draft' | 'published') || 'draft',
+      })
     }
-  }, [id, isEditing])
+  }, [productDetail, isEditing])
 
   // Generic field change handler
   const handleChange = (
@@ -232,26 +239,58 @@ export function useProductForm(id?: string) {
     return Object.keys(newErrors).length === 0
   }
 
+  // Build payload for API
+  const buildPayload = (statusOverride?: 'draft' | 'published'): CreateProductPayload => {
+    return {
+      name: formData.name,
+      subtitle: formData.shortDescription || formData.name,
+      categoryId: formData.categoryIds.length > 0 ? formData.categoryIds[0] : null,
+      brandId: formData.brandId || null,
+      image: formData.heroImage || null,
+      overallScore: formData.rating ?? 0,
+      isRecommended: false,
+      price: formData.price ?? 0,
+      currency: 'THB',
+      priceLabel: formData.price ? `฿${formData.price.toLocaleString()}` : '฿0',
+      affiliateLink: formData.affiliateLinks.length > 0 ? formData.affiliateLinks[0].url : null,
+      lastUpdated: new Date().toISOString().split('T')[0],
+      ratings: [],
+      status: statusOverride || (formData.status as 'draft' | 'published'),
+    }
+  }
+
   // Submit handlers
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
 
-    setIsSaving(true)
-    setTimeout(() => {
-      setIsSaving(false)
+    try {
+      const payload = buildPayload()
+      if (isEditing) {
+        await updateProduct.mutateAsync(payload)
+      } else {
+        await createProduct.mutateAsync(payload)
+      }
       navigate('/products')
-    }, 500)
+    } catch (error) {
+      console.error('Failed to save product:', error)
+    }
   }
 
-  const handleSaveAndPublish = () => {
+  const handleSaveAndPublish = async () => {
     if (!validate()) return
-    setFormData((prev) => ({ ...prev, status: 'published' }))
-    setIsSaving(true)
-    setTimeout(() => {
-      setIsSaving(false)
+
+    try {
+      const payload = buildPayload('published')
+      if (isEditing) {
+        await updateProduct.mutateAsync(payload)
+      } else {
+        await createProduct.mutateAsync(payload)
+      }
       navigate('/products')
-    }, 500)
+    } catch (error) {
+      console.error('Failed to save & publish product:', error)
+    }
   }
 
   return {

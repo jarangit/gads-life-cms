@@ -28,6 +28,7 @@ import {
   StatsSummary,
 } from "@/components/common";
 import { useCategories } from "@/api/queries/category/list";
+import { useDeleteCategory } from "@/api/queries/category/mutation";
 
 export function CategoriesListPage() {
   const [search, setSearch] = useState("");
@@ -37,6 +38,7 @@ export function CategoriesListPage() {
   const itemsPerPage = 10;
 
   const { data, isLoading } = useCategories();
+  const delelteCategoryMutation = useDeleteCategory();
 
   const categories = useMemo(() => data ?? [], [data]);
 
@@ -87,7 +89,11 @@ export function CategoriesListPage() {
   const handleDelete = () => {
     if (deleteModal.itemId) {
       // TODO: Implement delete mutation
-      deleteModal.closeModal();
+      delelteCategoryMutation.mutate(deleteModal.itemId, {
+        onSuccess: () => {
+          deleteModal.closeModal();
+        },
+      });
     }
   };
 
@@ -168,7 +174,11 @@ export function CategoriesListPage() {
                         {category.heroImage ? (
                           <img
                             src={category.heroImage}
-                            alt={category.nameEn || category.nameTh || category.slug}
+                            alt={
+                              category.nameEn ||
+                              category.nameTh ||
+                              category.slug
+                            }
                             className="h-10 w-10 rounded-lg border border-slate-200 object-cover"
                           />
                         ) : (
@@ -178,7 +188,9 @@ export function CategoriesListPage() {
                         )}
                         <div>
                           <p className="font-medium text-slate-900">
-                            {category.nameEn || category.nameTh || category.slug}
+                            {category.nameEn ||
+                              category.nameTh ||
+                              category.slug}
                           </p>
                           {category.nameTh && category.nameEn && (
                             <p className="text-sm text-slate-500">

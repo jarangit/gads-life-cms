@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { useForm, Controller } from 'react-hook-form'
-import { ArrowLeft } from 'lucide-react'
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useForm, Controller } from "react-hook-form";
+import { ArrowLeft } from "lucide-react";
 import {
   Button,
   Input,
@@ -12,47 +12,28 @@ import {
   CardHeader,
   CardTitle,
   CardContent,
-} from '@/components/ui'
-import { PageHeader } from '@/components/common'
-import type { Category, CategoryFormData } from '@/types'
-
-// Mock data for demo
-const mockCategories: Category[] = [
-  {
-    id: '1',
-    name: 'Laptops',
-    slug: 'laptops',
-    description: 'All laptop reviews',
-    parentId: null,
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
-  },
-  {
-    id: '3',
-    name: 'Smartphones',
-    slug: 'smartphones',
-    description: 'Smartphone reviews',
-    parentId: null,
-    createdAt: '2024-01-17T10:00:00Z',
-    updatedAt: '2024-01-17T10:00:00Z',
-  },
-]
+} from "@/components/ui";
+import { PageHeader } from "@/components/common";
+import type { ICreateCategoryPayload } from "@/api/types/category";
+import { useCreateCategory } from "@/api/queries/category/mutation";
 
 function generateSlug(name: string): string {
   return name
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 }
 
 export function CategoryFormPage() {
-  const navigate = useNavigate()
-  const { id } = useParams()
-  const isEditing = Boolean(id)
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditing = Boolean(id);
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [categories, setCategories] = useState<Category[]>([])
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // mutation
+  const categoryMutation = useCreateCategory();
 
   const {
     register,
@@ -62,87 +43,79 @@ export function CategoryFormPage() {
     setValue,
     watch,
     formState: { errors },
-  } = useForm<CategoryFormData>({
+  } = useForm<ICreateCategoryPayload>({
     defaultValues: {
-      name: '',
-      slug: '',
-      parentId: null,
-      description: '',
-      coverImage: '',
-      seo: {
-        metaTitle: '',
-        metaDescription: '',
-        ogImage: '',
-      },
+      slug: "",
+      nameTh: "",
+      nameEn: null,
+      description: null,
+      heroImage: null,
+      isActive: false,
+      orderIndex: 0,
     },
-  })
+  });
 
-  // Watch name field to auto-generate slug
-  const nameValue = watch('name')
+  // Watch nameTh field to auto-generate slug
+  const nameThValue = watch("nameTh");
 
   useEffect(() => {
-    if (!isEditing && nameValue !== undefined) {
-      setValue('slug', generateSlug(nameValue))
+    if (!isEditing && nameThValue) {
+      setValue("slug", generateSlug(nameThValue));
     }
-  }, [nameValue, isEditing, setValue])
+  }, [nameThValue, isEditing, setValue]);
 
   useEffect(() => {
-    // Load parent categories
-    setCategories(mockCategories)
-
-    if (isEditing) {
-      setIsLoading(true)
-      // Simulate API call to get category
+    if (isEditing && id) {
+      setIsLoading(true);
+      // TODO: Fetch category by id and reset form
+      // For now, simulate loading
       setTimeout(() => {
-        const category = mockCategories.find((c) => c.id === id)
-        if (category) {
-          reset({
-            name: category.name,
-            slug: category.slug,
-            parentId: category.parentId,
-            description: category.description || '',
-            coverImage: category.coverImage || '',
-            seo: category.seo || { metaTitle: '', metaDescription: '', ogImage: '' },
-          })
-        }
-        setIsLoading(false)
-      }, 300)
+        setIsLoading(false);
+      }, 300);
     }
-  }, [id, isEditing, reset])
+  }, [id, isEditing, reset]);
 
-  const onSubmit = async (_data: CategoryFormData) => {
-    setIsSaving(true)
-    // Simulate API call
+  const onSubmit = async (data: ICreateCategoryPayload) => {
+    categoryMutation.mutate(data);
+    console.log("🚀 ~ onSubmit ~ data:", data);
+    setIsSaving(true);
+    // TODO: Implement create/update mutation
     setTimeout(() => {
-      setIsSaving(false)
-      navigate('/categories')
-    }, 500)
-  }
+      setIsSaving(false);
+      navigate("/categories");
+    }, 500);
+  };
 
-  const parentOptions = [
-    { value: '', label: 'None (Top Level)' },
-    ...categories
-      .filter((c) => c.id !== id) // Exclude self for editing
-      .map((c) => ({ value: c.id, label: c.name })),
-  ]
+  const statusOptions = [
+    { value: "1", label: "Active" },
+    { value: "0", label: "Inactive" },
+  ];
+
+  const transformStatusValue = (value: string): boolean => {
+    return value === "1" || value === "true" ? true : false;
+  };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
       </div>
-    )
+    );
   }
 
   return (
     <div>
       <PageHeader
-        title={isEditing ? 'Edit Category' : 'New Category'}
-        description={isEditing ? 'Update category details' : 'Create a new product category'}
+        title={isEditing ? "Edit Category" : "New Category"}
+        description={
+          isEditing
+            ? "Update category details"
+            : "Create a new product category"
+        }
         actions={
           <Button
             variant="ghost"
-            onClick={() => navigate('/categories')}
+            onClick={() => navigate("/categories")}
             leftIcon={<ArrowLeft className="h-4 w-4" />}
           >
             Back
@@ -160,10 +133,18 @@ export function CategoryFormPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <Input
-                  label="Name"
+                  label="Name (Thai)"
+                  placeholder="e.g., แล็ปท็อปเกมมิ่ง"
+                  error={errors.nameTh?.message}
+                  {...register("nameTh", {
+                    required: "Name (Thai) is required",
+                  })}
+                />
+
+                <Input
+                  label="Name (English)"
                   placeholder="e.g., Gaming Laptops"
-                  error={errors.name?.message}
-                  {...register('name', { required: 'Name is required' })}
+                  {...register("nameEn")}
                 />
 
                 <Input
@@ -171,47 +152,21 @@ export function CategoryFormPage() {
                   hint="URL-friendly identifier"
                   placeholder="e.g., gaming-laptops"
                   error={errors.slug?.message}
-                  {...register('slug', {
-                    required: 'Slug is required',
+                  {...register("slug", {
+                    required: "Slug is required",
                     pattern: {
                       value: /^[a-z0-9-]+$/,
                       message:
-                        'Slug can only contain lowercase letters, numbers, and hyphens',
+                        "Slug can only contain lowercase letters, numbers, and hyphens",
                     },
                   })}
-                />
-
-                <Select
-                  label="Parent Category"
-                  options={parentOptions}
-                  {...register('parentId')}
                 />
 
                 <Textarea
                   label="Description"
                   placeholder="Brief description of this category"
                   rows={3}
-                  {...register('description')}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>SEO</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Input
-                  label="Meta Title"
-                  placeholder="SEO title for search engines"
-                  {...register('seo.metaTitle')}
-                />
-
-                <Textarea
-                  label="Meta Description"
-                  placeholder="SEO description for search engines"
-                  rows={2}
-                  {...register('seo.metaDescription')}
+                  {...register("description")}
                 />
               </CardContent>
             </Card>
@@ -221,16 +176,16 @@ export function CategoryFormPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Cover Image</CardTitle>
+                <CardTitle>Hero Image</CardTitle>
               </CardHeader>
               <CardContent>
                 <Controller
-                  name="coverImage"
+                  name="heroImage"
                   control={control}
                   render={({ field }) => (
                     <ImageUpload
-                      value={field.value}
-                      onChange={(url) => field.onChange(url || '')}
+                      value={field.value ?? undefined}
+                      onChange={(url) => field.onChange(url || null)}
                       hint="Recommended: 1200x630px"
                     />
                   )}
@@ -239,15 +194,44 @@ export function CategoryFormPage() {
             </Card>
 
             <Card>
+              <CardHeader>
+                <CardTitle>Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Controller
+                  name="isActive"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      label="Status"
+                      options={statusOptions}
+                      value={field.value ? "1" : "0"}
+                      onChange={(e) =>
+                        field.onChange(transformStatusValue(e.target.value))
+                      }
+                    />
+                  )}
+                />
+
+                <Input
+                  label="Order Index"
+                  type="number"
+                  placeholder="0"
+                  {...register("orderIndex", { valueAsNumber: true })}
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
               <CardContent className="pt-6">
                 <div className="flex flex-col gap-3">
                   <Button type="submit" isLoading={isSaving} className="w-full">
-                    {isEditing ? 'Update Category' : 'Create Category'}
+                    {isEditing ? "Update Category" : "Create Category"}
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => navigate('/categories')}
+                    onClick={() => navigate("/categories")}
                     className="w-full"
                   >
                     Cancel
@@ -259,5 +243,5 @@ export function CategoryFormPage() {
         </div>
       </form>
     </div>
-  )
+  );
 }

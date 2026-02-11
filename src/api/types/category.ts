@@ -10,3 +10,14 @@ export interface ICategoryItem {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface ICreateCategoryPayload {
+  id?: string;
+  slug: string;
+  nameTh: string;
+  nameEn?: null;
+  description?: null;
+  heroImage?: null;
+  isActive?: boolean;
+  orderIndex?: number;
+}

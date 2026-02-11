@@ -1,27 +1,27 @@
-import { useState } from 'react'
+import { useState } from "react";
 import {
   Button,
   Modal,
   ModalHeader,
   ModalBody,
   ModalFooter,
-} from '@/components/ui'
+} from "@/components/ui";
 
 interface DeleteConfirmModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onConfirm: () => void
-  title?: string
-  message?: string
-  isLoading?: boolean
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title?: string;
+  message?: string;
+  isLoading?: boolean;
 }
 
 export function DeleteConfirmModal({
   isOpen,
   onClose,
   onConfirm,
-  title = 'Delete Item',
-  message = 'Are you sure you want to delete this item? This action cannot be undone.',
+  title = "Delete Item",
+  message = "Are you sure you want to delete this item? This action cannot be undone.",
   isLoading = false,
 }: DeleteConfirmModalProps) {
   return (
@@ -39,28 +39,28 @@ export function DeleteConfirmModal({
         </Button>
       </ModalFooter>
     </Modal>
-  )
+  );
 }
 
 // Hook for managing delete modal state
 export function useDeleteModal() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [itemId, setItemId] = useState<string | null>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const [itemId, setItemId] = useState<string | null>(null);
 
   const openModal = (id: string) => {
-    setItemId(id)
-    setIsOpen(true)
-  }
+    setItemId(id);
+    setIsOpen(true);
+  };
 
   const closeModal = () => {
-    setIsOpen(false)
-    setItemId(null)
-  }
+    setIsOpen(false);
+    setItemId(null);
+  };
 
   return {
     isOpen,
     itemId,
     openModal,
     closeModal,
-  }
+  };
 }

@@ -1,13 +1,13 @@
 import { http } from "@/api/http";
 import { qk } from "../key";
 import { useQuery } from "@tanstack/react-query";
-import type { IBrandItem } from "@/api/types/brand";
+import type { ICategoryItem } from "@/api/types/category";
 
 interface ApiResponse {
   success: boolean;
   message: string;
   data: {
-    items: IBrandItem[];
+    items: ICategoryItem[];
   };
 }
 

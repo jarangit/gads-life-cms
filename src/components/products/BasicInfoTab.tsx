@@ -8,7 +8,8 @@ import {
   CardContent,
 } from '@/components/ui'
 import type { ProductFormData } from '@/types'
-import { mockCategories, brandOptions } from '@/mocks/products'
+import { useCategories } from '@/api/queries/category/list'
+import { useBrands } from '@/api/queries/brands/list'
 
 interface BasicInfoTabProps {
   formData: ProductFormData
@@ -27,6 +28,14 @@ export function BasicInfoTab({
   onPriceChange,
   onRatingChange,
 }: BasicInfoTabProps) {
+  const { data: categories = [] } = useCategories()
+  const { data: brands = [] } = useBrands()
+
+  const brandOptions = [
+    { value: '', label: 'Select a brand' },
+    ...brands.map((b) => ({ value: b.id, label: b.name })),
+  ]
+
   return (
     <Card>
       <CardHeader>
@@ -66,7 +75,7 @@ export function BasicInfoTab({
             Categories
           </label>
           <div className="flex flex-wrap gap-2">
-            {mockCategories.map((cat) => (
+            {categories.map((cat) => (
               <label
                 key={cat.id}
                 className={`inline-flex cursor-pointer items-center rounded-lg border px-3 py-1.5 text-sm transition-colors ${
@@ -81,7 +90,7 @@ export function BasicInfoTab({
                   checked={formData.categoryIds.includes(cat.id)}
                   onChange={() => onCategoryToggle(cat.id)}
                 />
-                {cat.name}
+                {cat.nameTh || cat.slug}
               </label>
             ))}
           </div>

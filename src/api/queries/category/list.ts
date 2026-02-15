@@ -4,17 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import type { ICategoryItem } from "@/api/types/category";
 
 interface ApiResponse {
-  success: boolean;
-  message: string;
-  data: {
-    items: ICategoryItem[];
-  };
+  items: ICategoryItem[];
+  total: number;
 }
 
 export const useCategories = () => {
   return useQuery({
     queryKey: qk.categories(),
     queryFn: () => http<ApiResponse>("/admin/category"),
-    select: (response) => response.data.items,
+    select: (response) => response,
   });
 };

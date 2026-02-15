@@ -6,18 +6,22 @@ import {
   CardHeader,
   CardTitle,
   CardContent,
-} from '@/components/ui'
-import type { ProductFormData } from '@/types'
-import { useCategories } from '@/api/queries/category/list'
-import { useBrands } from '@/api/queries/brands/list'
+} from "@/components/ui";
+import type { ProductFormData } from "@/types";
+import { useCategories } from "@/api/queries/category/list";
+import { useBrands } from "@/api/queries/brands/list";
 
 interface BasicInfoTabProps {
-  formData: ProductFormData
-  errors: Partial<Record<keyof ProductFormData, string>>
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void
-  onCategoryToggle: (categoryId: string) => void
-  onPriceChange: (value: number | undefined) => void
-  onRatingChange: (value: number | undefined) => void
+  formData: ProductFormData;
+  errors: Partial<Record<keyof ProductFormData, string>>;
+  onChange: (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => void;
+  onCategoryToggle: (categoryId: string) => void;
+  onPriceChange: (value: number | undefined) => void;
+  onRatingChange: (value: number | undefined) => void;
 }
 
 export function BasicInfoTab({
@@ -28,13 +32,13 @@ export function BasicInfoTab({
   onPriceChange,
   onRatingChange,
 }: BasicInfoTabProps) {
-  const { data: categories = [] } = useCategories()
-  const { data: brands = [] } = useBrands()
+  const { data: categories = [] } = useCategories();
+  const { data: brands = [] } = useBrands();
 
   const brandOptions = [
-    { value: '', label: 'Select a brand' },
+    { value: "", label: "Select a brand" },
     ...brands.map((b) => ({ value: b.id, label: b.name })),
-  ]
+  ];
 
   return (
     <Card>
@@ -75,13 +79,13 @@ export function BasicInfoTab({
             Categories
           </label>
           <div className="flex flex-wrap gap-2">
-            {categories.map((cat) => (
+            {categories?.items?.map((cat) => (
               <label
                 key={cat.id}
                 className={`inline-flex cursor-pointer items-center rounded-lg border px-3 py-1.5 text-sm transition-colors ${
                   formData.categoryIds.includes(cat.id)
-                    ? 'border-blue-600 bg-blue-50 text-blue-600'
-                    : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50'
+                    ? "border-blue-600 bg-blue-50 text-blue-600"
+                    : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
                 }`}
               >
                 <input
@@ -110,7 +114,7 @@ export function BasicInfoTab({
             label="Price ($)"
             name="price"
             type="number"
-            value={formData.price || ''}
+            value={formData.price || ""}
             onChange={(e) =>
               onPriceChange(e.target.value ? Number(e.target.value) : undefined)
             }
@@ -124,14 +128,16 @@ export function BasicInfoTab({
             step="0.1"
             min="0"
             max="5"
-            value={formData.rating || ''}
+            value={formData.rating || ""}
             onChange={(e) =>
-              onRatingChange(e.target.value ? Number(e.target.value) : undefined)
+              onRatingChange(
+                e.target.value ? Number(e.target.value) : undefined,
+              )
             }
             placeholder="e.g., 4.5"
           />
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

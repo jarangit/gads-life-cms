@@ -40,7 +40,7 @@ export function CategoriesListPage() {
   const { data, isLoading } = useCategories();
   const delelteCategoryMutation = useDeleteCategory();
 
-  const categories = useMemo(() => data ?? [], [data]);
+  const categories = useMemo(() => data?.items ?? [], [data?.items]);
 
   const filteredCategories = useMemo(() => {
     if (!search) return categories;

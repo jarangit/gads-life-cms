@@ -30,6 +30,6 @@ export function useProducts(params: ProductListParams = {}) {
         //   page: params.page,
         // },
       }),
-    select: (response) => response.data,
+    select: (response) => response,
   });
 }

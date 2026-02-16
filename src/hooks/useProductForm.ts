@@ -25,6 +25,18 @@ const initialFormData: ProductFormData = {
   galleryImages: [],
   affiliateLinks: [],
   status: 'draft',
+  // New product detail fields
+  keyHighlights: [''],
+  weaknesses: [''],
+  beforePurchasePoints: [''],
+  afterUsagePoints: [''],
+  quickVerdictQuote: '',
+  quickVerdictDescription: '',
+  quickVerdictTags: [''],
+  pricingPrice: undefined,
+  pricingCurrency: 'THB',
+  pricingLabel: '',
+  ratings: [],
 }
 
 export function useProductForm(id?: string) {
@@ -50,8 +62,12 @@ export function useProductForm(id?: string) {
         categoryIds: productDetail.categoryId ? [productDetail.categoryId] : [],
         shortDescription: productDetail.subtitle || '',
         sections: [],
-        pros: [''],
-        cons: [''],
+        pros: productDetail.pros?.length
+          ? productDetail.pros.map((p) => p.content)
+          : [''],
+        cons: productDetail.cons?.length
+          ? productDetail.cons.map((c) => c.content)
+          : [''],
         specs: [{ key: '', value: '' }],
         rating: productDetail.overallScore ? Number(productDetail.overallScore) : undefined,
         price: productDetail.price,
@@ -61,6 +77,31 @@ export function useProductForm(id?: string) {
           ? [{ id: generateId(), merchant: '', url: productDetail.affiliateLink, price: undefined, note: '' }]
           : [],
         status: (productDetail.status as 'draft' | 'published') || 'draft',
+        // New detail fields
+        keyHighlights: productDetail.keyHighlights?.length
+          ? productDetail.keyHighlights.map((h) => h.content)
+          : [''],
+        weaknesses: productDetail.weaknesses?.length
+          ? productDetail.weaknesses.map((w) => w.content)
+          : [''],
+        beforePurchasePoints: productDetail.beforePurchasePoints?.length
+          ? productDetail.beforePurchasePoints.map((p) => p.content)
+          : [''],
+        afterUsagePoints: productDetail.afterUsagePoints?.length
+          ? productDetail.afterUsagePoints.map((p) => p.content)
+          : [''],
+        quickVerdictQuote: productDetail.quickVerdict?.quote || '',
+        quickVerdictDescription: productDetail.quickVerdict?.description || '',
+        quickVerdictTags: productDetail.quickVerdictTags?.length
+          ? productDetail.quickVerdictTags.map((t) => t.tag)
+          : [''],
+        pricingPrice: productDetail.pricing?.price ?? productDetail.price,
+        pricingCurrency: productDetail.pricing?.currency || 'THB',
+        pricingLabel: productDetail.pricing?.priceLabel || productDetail.priceLabel || '',
+        ratings: productDetail.ratings?.map((r) => ({
+          subCategory: r.subCategory,
+          score: r.score,
+        })) ?? [],
       })
     }
   }, [productDetail, isEditing])
@@ -178,6 +219,58 @@ export function useProductForm(id?: string) {
     }))
   }
 
+  // ─── Generic string-list handlers (highlights, weaknesses, points, tags) ───
+  const makeListHandlers = (field: keyof ProductFormData) => ({
+    handleChange: (index: number, value: string) => {
+      setFormData((prev) => {
+        const list = [...(prev[field] as string[])]
+        list[index] = value
+        return { ...prev, [field]: list }
+      })
+    },
+    add: () => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: [...(prev[field] as string[]), ''],
+      }))
+    },
+    remove: (index: number) => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: (prev[field] as string[]).filter((_, i) => i !== index),
+      }))
+    },
+  })
+
+  const keyHighlightsHandlers = makeListHandlers('keyHighlights')
+  const weaknessesHandlers = makeListHandlers('weaknesses')
+  const beforePurchaseHandlers = makeListHandlers('beforePurchasePoints')
+  const afterUsageHandlers = makeListHandlers('afterUsagePoints')
+  const verdictTagsHandlers = makeListHandlers('quickVerdictTags')
+
+  // Ratings handlers
+  const handleRatingItemChange = (index: number, field: 'subCategory' | 'score', value: string | number) => {
+    setFormData((prev) => {
+      const newRatings = [...prev.ratings]
+      newRatings[index] = { ...newRatings[index], [field]: value }
+      return { ...prev, ratings: newRatings }
+    })
+  }
+
+  const addRating = () => {
+    setFormData((prev) => ({
+      ...prev,
+      ratings: [...prev.ratings, { subCategory: '', score: 3 }],
+    }))
+  }
+
+  const removeRating = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      ratings: prev.ratings.filter((_, i) => i !== index),
+    }))
+  }
+
   // JSON Import
   const importFromJson = (jsonString: string): string | null => {
     if (!jsonString.trim()) {
@@ -241,6 +334,8 @@ export function useProductForm(id?: string) {
 
   // Build payload for API
   const buildPayload = (statusOverride?: 'draft' | 'published'): CreateProductPayload => {
+    const filterNonEmpty = (arr: string[]) => arr.filter((s) => s.trim())
+
     return {
       name: formData.name,
       subtitle: formData.shortDescription || formData.name,
@@ -254,8 +349,21 @@ export function useProductForm(id?: string) {
       priceLabel: formData.price ? `฿${formData.price.toLocaleString()}` : '฿0',
       affiliateLink: formData.affiliateLinks.length > 0 ? formData.affiliateLinks[0].url : null,
       lastUpdated: new Date().toISOString().split('T')[0],
-      ratings: [],
+      ratings: formData.ratings.filter((r) => r.subCategory.trim()),
       status: statusOverride || (formData.status as 'draft' | 'published'),
+      keyHighlights: filterNonEmpty(formData.keyHighlights).map((c, i) => ({ content: c, sortOrder: i + 1 })),
+      weaknesses: filterNonEmpty(formData.weaknesses).map((c, i) => ({ content: c, sortOrder: i + 1 })),
+      beforePurchasePoints: filterNonEmpty(formData.beforePurchasePoints).map((c, i) => ({ content: c, sortOrder: i + 1 })),
+      afterUsagePoints: filterNonEmpty(formData.afterUsagePoints).map((c, i) => ({ content: c, sortOrder: i + 1 })),
+      pros: filterNonEmpty(formData.pros).map((c, i) => ({ content: c, sortOrder: i + 1 })),
+      cons: filterNonEmpty(formData.cons).map((c, i) => ({ content: c, sortOrder: i + 1 })),
+      quickVerdict: formData.quickVerdictQuote.trim()
+        ? { quote: formData.quickVerdictQuote, description: formData.quickVerdictDescription }
+        : null,
+      quickVerdictTags: filterNonEmpty(formData.quickVerdictTags).map((t, i) => ({ tag: t, sortOrder: i + 1 })),
+      pricing: formData.pricingPrice != null
+        ? { price: formData.pricingPrice, currency: formData.pricingCurrency || 'THB', priceLabel: formData.pricingLabel }
+        : null,
     }
   }
 
@@ -327,6 +435,18 @@ export function useProductForm(id?: string) {
 
     // Categories
     toggleCategory,
+
+    // Product Details — list handlers
+    keyHighlightsHandlers,
+    weaknessesHandlers,
+    beforePurchaseHandlers,
+    afterUsageHandlers,
+    verdictTagsHandlers,
+
+    // Ratings
+    handleRatingItemChange,
+    addRating,
+    removeRating,
 
     // JSON Import
     importFromJson,

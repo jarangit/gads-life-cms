@@ -18,6 +18,15 @@ export interface ProductItemResponse {
   updatedAt: Date;
   ratings: Rating[];
   status: string;
+  keyHighlights: SortedContentItem[];
+  weaknesses: SortedContentItem[];
+  beforePurchasePoints: SortedContentItem[];
+  afterUsagePoints: SortedContentItem[];
+  pros: SortedContentItem[];
+  cons: SortedContentItem[];
+  quickVerdict: QuickVerdict | null;
+  quickVerdictTags: QuickVerdictTag[];
+  pricing: ProductPricing | null;
 }
 
 export interface Brand {
@@ -44,4 +53,41 @@ export interface Rating {
   productId: string;
   subCategory: string;
   score: number;
+}
+
+export interface SortedContentItem {
+  id: number;
+  productId: string;
+  content: string;
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface QuickVerdict {
+  id: number;
+  productId: string;
+  quote: string;
+  description: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface QuickVerdictTag {
+  id: number;
+  productId: string;
+  tag: string;
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ProductPricing {
+  id: number;
+  productId: string;
+  price: number;
+  currency: string;
+  priceLabel: string;
+  createdAt: Date;
+  updatedAt: Date;
 }

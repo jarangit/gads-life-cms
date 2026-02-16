@@ -224,6 +224,7 @@ export function ProductsListPage() {
                   <TableHead>Price</TableHead>
                   <TableHead>Score</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Updated</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -287,6 +288,15 @@ export function ProductsListPage() {
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={product.status as ContentStatus} />
+                      </TableCell>
+                      <TableCell className="text-slate-500 text-sm whitespace-nowrap">
+                        {product.updatedAt
+                          ? new Date(product.updatedAt).toLocaleDateString("th-TH", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "—"}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">

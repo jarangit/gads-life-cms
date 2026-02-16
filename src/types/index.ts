@@ -106,6 +106,18 @@ export interface ProductFormData {
   galleryImages: string[]
   affiliateLinks: AffiliateLink[]
   status: ContentStatus
+  // ─── New product detail fields ───
+  keyHighlights: string[]
+  weaknesses: string[]
+  beforePurchasePoints: string[]
+  afterUsagePoints: string[]
+  quickVerdictQuote: string
+  quickVerdictDescription: string
+  quickVerdictTags: string[]
+  pricingPrice?: number
+  pricingCurrency: string
+  pricingLabel: string
+  ratings: { subCategory: string; score: number }[]
 }
 
 // Collection

@@ -17,15 +17,17 @@ import {
   SpecsTab,
   AffiliateLinksTab,
   JsonImportTab,
+  ProductDetailsTab,
   getJsonTemplate,
 } from "@/components/products";
 import { useProductForm } from "@/hooks";
 import { statusOptions } from "@/mocks/products";
 
-type TabId = "basic" | "content" | "specs" | "links" | "json";
+type TabId = "basic" | "details" | "content" | "specs" | "links" | "json";
 
 const tabs: { id: TabId; label: string; icon?: React.ReactNode }[] = [
   { id: "basic", label: "Basic Info" },
+  { id: "details", label: "Product Details" },
   { id: "content", label: "Pros & Cons" },
   { id: "specs", label: "Specifications" },
   { id: "links", label: "Affiliate Links" },
@@ -61,6 +63,14 @@ export function ProductFormPage() {
     addLink,
     removeLink,
     toggleCategory,
+    keyHighlightsHandlers,
+    weaknessesHandlers,
+    beforePurchaseHandlers,
+    afterUsageHandlers,
+    verdictTagsHandlers,
+    handleRatingItemChange,
+    addRating,
+    removeRating,
     importFromJson,
     navigate,
   } = useProductForm(id);
@@ -135,6 +145,21 @@ export function ProductFormPage() {
                 onCategoryToggle={toggleCategory}
                 onPriceChange={(value) => updateField("price", value)}
                 onRatingChange={(value) => updateField("rating", value)}
+              />
+            )}
+
+            {activeTab === "details" && (
+              <ProductDetailsTab
+                formData={formData}
+                keyHighlightsHandlers={keyHighlightsHandlers}
+                weaknessesHandlers={weaknessesHandlers}
+                beforePurchaseHandlers={beforePurchaseHandlers}
+                afterUsageHandlers={afterUsageHandlers}
+                verdictTagsHandlers={verdictTagsHandlers}
+                handleRatingItemChange={handleRatingItemChange}
+                addRating={addRating}
+                removeRating={removeRating}
+                updateField={updateField as (field: string, value: unknown) => void}
               />
             )}
 

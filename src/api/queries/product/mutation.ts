@@ -18,6 +18,15 @@ export interface CreateProductPayload {
   lastUpdated: string;
   ratings?: { subCategory: string; score: number }[];
   status?: "draft" | "published";
+  keyHighlights?: { content: string; sortOrder?: number }[];
+  weaknesses?: { content: string; sortOrder?: number }[];
+  beforePurchasePoints?: { content: string; sortOrder?: number }[];
+  afterUsagePoints?: { content: string; sortOrder?: number }[];
+  pros?: { content: string; sortOrder?: number }[];
+  cons?: { content: string; sortOrder?: number }[];
+  quickVerdict?: { quote: string; description: string } | null;
+  quickVerdictTags?: { tag: string; sortOrder?: number }[];
+  pricing?: { price: number; currency?: string; priceLabel: string } | null;
 }
 
 export function useCreateProduct() {

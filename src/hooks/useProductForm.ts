@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ProductFormData, AffiliateLink } from '@/types'
 import { generateSlug, generateId } from '@/utils'
@@ -8,6 +8,7 @@ import {
   useUpdateProduct,
   type CreateProductPayload,
 } from '@/api/queries/product/mutation'
+import { EDITABLE_PAYLOAD_FIELDS } from '@/config/editableFields'
 
 const initialFormData: ProductFormData = {
   name: '',
@@ -49,6 +50,9 @@ export function useProductForm(id?: string) {
 
   const [formData, setFormData] = useState<ProductFormData>(initialFormData)
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormData, string>>>({})
+  
+  // Store original payload when loading for partial update comparison
+  const originalPayloadRef = useRef<Partial<CreateProductPayload> | null>(null)
 
   const isSaving = createProduct.isPending || updateProduct.isPending
 
@@ -103,6 +107,16 @@ export function useProductForm(id?: string) {
           score: r.score,
         })) ?? [],
       })
+
+      // Store original payload values for editable fields (for partial update comparison)
+      originalPayloadRef.current = {
+        name: productDetail.name || '',
+        subtitle: productDetail.subtitle || productDetail.name || '',
+        categoryId: productDetail.categoryId || null,
+        brandId: productDetail.brandId || null,
+        image: productDetail.image || null,
+        status: (productDetail.status as 'draft' | 'published') || 'draft',
+      }
     }
   }, [productDetail, isEditing])
 
@@ -367,16 +381,59 @@ export function useProductForm(id?: string) {
     }
   }
 
+  // Build partial payload for editing (only changed editable fields)
+  const buildPartialPayload = (statusOverride?: 'draft' | 'published'): Partial<CreateProductPayload> => {
+    const currentPayload: Record<string, unknown> = {
+      name: formData.name,
+      subtitle: formData.shortDescription || formData.name,
+      categoryId: formData.categoryIds.length > 0 ? formData.categoryIds[0] : null,
+      brandId: formData.brandId || null,
+      image: formData.heroImage || null,
+      status: statusOverride || (formData.status as 'draft' | 'published'),
+    }
+
+    const original = originalPayloadRef.current
+    if (!original) {
+      // Fallback to all editable fields if no original
+      return currentPayload as Partial<CreateProductPayload>
+    }
+
+    // Compare and return only changed fields
+    const changedPayload: Partial<CreateProductPayload> = {}
+    
+    for (const field of EDITABLE_PAYLOAD_FIELDS) {
+      const currentValue = currentPayload[field]
+      const originalValue = original[field as keyof CreateProductPayload]
+      
+      // Deep comparison for objects, simple comparison for primitives
+      if (JSON.stringify(currentValue) !== JSON.stringify(originalValue)) {
+        (changedPayload as Record<string, unknown>)[field] = currentValue
+      }
+    }
+
+    // Always include status if override is provided
+    if (statusOverride) {
+      changedPayload.status = statusOverride
+    }
+
+    return changedPayload
+  }
+
   // Submit handlers
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
 
     try {
-      const payload = buildPayload()
       if (isEditing) {
-        await updateProduct.mutateAsync(payload)
+        // Partial update: only send changed fields
+        const partialPayload = buildPartialPayload()
+        if (Object.keys(partialPayload).length > 0) {
+          await updateProduct.mutateAsync(partialPayload)
+        }
       } else {
+        // Create: send full payload
+        const payload = buildPayload()
         await createProduct.mutateAsync(payload)
       }
       navigate('/products')
@@ -389,10 +446,13 @@ export function useProductForm(id?: string) {
     if (!validate()) return
 
     try {
-      const payload = buildPayload('published')
       if (isEditing) {
-        await updateProduct.mutateAsync(payload)
+        // Partial update: only send changed fields + status
+        const partialPayload = buildPartialPayload('published')
+        await updateProduct.mutateAsync(partialPayload)
       } else {
+        // Create: send full payload
+        const payload = buildPayload('published')
         await createProduct.mutateAsync(payload)
       }
       navigate('/products')

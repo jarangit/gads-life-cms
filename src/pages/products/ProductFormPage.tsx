@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { ArrowLeft, FileJson } from "lucide-react";
+import { ArrowLeft, FileJson, Lock } from "lucide-react";
 import {
   Button,
   Select,
@@ -19,13 +19,21 @@ import {
   JsonImportTab,
   ProductDetailsTab,
   getJsonTemplate,
+  // Read-only versions
+  ReadOnlyProductDetails,
+  ReadOnlyProsCons,
+  ReadOnlySpecs,
+  ReadOnlyAffiliateLinks,
 } from "@/components/products";
 import { useProductForm } from "@/hooks";
 import { statusOptions } from "@/mocks/products";
+import {
+  type ProductTabId,
+  isTabEditable,
+  getVisibleTabs,
+} from "@/config/editableFields";
 
-type TabId = "basic" | "details" | "content" | "specs" | "links" | "json";
-
-const tabs: { id: TabId; label: string; icon?: React.ReactNode }[] = [
+const allTabs: { id: ProductTabId; label: string; icon?: React.ReactNode }[] = [
   { id: "basic", label: "Basic Info" },
   { id: "details", label: "Product Details" },
   { id: "content", label: "Pros & Cons" },
@@ -36,7 +44,7 @@ const tabs: { id: TabId; label: string; icon?: React.ReactNode }[] = [
 
 export function ProductFormPage() {
   const { id } = useParams();
-  const [activeTab, setActiveTab] = useState<TabId>("basic");
+  const [activeTab, setActiveTab] = useState<ProductTabId>("basic");
   const [jsonInput, setJsonInput] = useState("");
   const [jsonError, setJsonError] = useState<string | null>(null);
 
@@ -118,21 +126,27 @@ export function ProductFormPage() {
             {/* Tabs */}
             <div className="border-b border-slate-200">
               <nav className="-mb-px flex gap-6">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-1.5 border-b-2 pb-3 text-sm font-medium transition-colors ${
-                      activeTab === tab.id
-                        ? "border-blue-600 text-blue-600"
-                        : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
-                    }`}
-                  >
-                    {tab.icon}
-                    {tab.label}
-                  </button>
-                ))}
+                {getVisibleTabs(allTabs, isEditing).map((tab) => {
+                  const isReadOnly = !isTabEditable(tab.id, isEditing);
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center gap-1.5 border-b-2 pb-3 text-sm font-medium transition-colors ${
+                        activeTab === tab.id
+                          ? "border-blue-600 text-blue-600"
+                          : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
+                      }`}
+                    >
+                      {tab.icon}
+                      {tab.label}
+                      {isReadOnly && (
+                        <Lock className="h-3 w-3 text-slate-400" />
+                      )}
+                    </button>
+                  );
+                })}
               </nav>
             </div>
 
@@ -149,49 +163,65 @@ export function ProductFormPage() {
             )}
 
             {activeTab === "details" && (
-              <ProductDetailsTab
-                formData={formData}
-                keyHighlightsHandlers={keyHighlightsHandlers}
-                weaknessesHandlers={weaknessesHandlers}
-                beforePurchaseHandlers={beforePurchaseHandlers}
-                afterUsageHandlers={afterUsageHandlers}
-                verdictTagsHandlers={verdictTagsHandlers}
-                handleRatingItemChange={handleRatingItemChange}
-                addRating={addRating}
-                removeRating={removeRating}
-                updateField={updateField as (field: string, value: unknown) => void}
-              />
+              isTabEditable("details", isEditing) ? (
+                <ProductDetailsTab
+                  formData={formData}
+                  keyHighlightsHandlers={keyHighlightsHandlers}
+                  weaknessesHandlers={weaknessesHandlers}
+                  beforePurchaseHandlers={beforePurchaseHandlers}
+                  afterUsageHandlers={afterUsageHandlers}
+                  verdictTagsHandlers={verdictTagsHandlers}
+                  handleRatingItemChange={handleRatingItemChange}
+                  addRating={addRating}
+                  removeRating={removeRating}
+                  updateField={updateField as (field: string, value: unknown) => void}
+                />
+              ) : (
+                <ReadOnlyProductDetails formData={formData} />
+              )
             )}
 
             {activeTab === "content" && (
-              <ProsConsTab
-                pros={formData.pros}
-                cons={formData.cons}
-                onProChange={handleProChange}
-                onAddPro={addPro}
-                onRemovePro={removePro}
-                onConChange={handleConChange}
-                onAddCon={addCon}
-                onRemoveCon={removeCon}
-              />
+              isTabEditable("content", isEditing) ? (
+                <ProsConsTab
+                  pros={formData.pros}
+                  cons={formData.cons}
+                  onProChange={handleProChange}
+                  onAddPro={addPro}
+                  onRemovePro={removePro}
+                  onConChange={handleConChange}
+                  onAddCon={addCon}
+                  onRemoveCon={removeCon}
+                />
+              ) : (
+                <ReadOnlyProsCons pros={formData.pros} cons={formData.cons} />
+              )
             )}
 
             {activeTab === "specs" && (
-              <SpecsTab
-                specs={formData.specs}
-                onSpecChange={handleSpecChange}
-                onAddSpec={addSpec}
-                onRemoveSpec={removeSpec}
-              />
+              isTabEditable("specs", isEditing) ? (
+                <SpecsTab
+                  specs={formData.specs}
+                  onSpecChange={handleSpecChange}
+                  onAddSpec={addSpec}
+                  onRemoveSpec={removeSpec}
+                />
+              ) : (
+                <ReadOnlySpecs specs={formData.specs} />
+              )
             )}
 
             {activeTab === "links" && (
-              <AffiliateLinksTab
-                links={formData.affiliateLinks}
-                onLinkChange={handleLinkChange}
-                onAddLink={addLink}
-                onRemoveLink={removeLink}
-              />
+              isTabEditable("links", isEditing) ? (
+                <AffiliateLinksTab
+                  links={formData.affiliateLinks}
+                  onLinkChange={handleLinkChange}
+                  onAddLink={addLink}
+                  onRemoveLink={removeLink}
+                />
+              ) : (
+                <ReadOnlyAffiliateLinks links={formData.affiliateLinks} />
+              )
             )}
 
             {activeTab === "json" && (

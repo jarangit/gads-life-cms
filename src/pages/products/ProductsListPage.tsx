@@ -258,6 +258,11 @@ export function ProductsListPage() {
                                 </span>
                               )}
                             </div>
+                            {product.slug && (
+                              <p className="text-xs text-slate-400 font-mono">
+                                /{product.slug}
+                              </p>
+                            )}
                             {product.subtitle && (
                               <p className="text-sm text-slate-500 line-clamp-1">
                                 {product.subtitle}

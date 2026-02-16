@@ -57,7 +57,7 @@ export function useProductForm(id?: string) {
     if (isEditing && productDetail) {
       setFormData({
         name: productDetail.name || '',
-        slug: '',
+        slug: productDetail.slug || '',
         brandId: productDetail.brandId || '',
         categoryIds: productDetail.categoryId ? [productDetail.categoryId] : [],
         shortDescription: productDetail.subtitle || '',

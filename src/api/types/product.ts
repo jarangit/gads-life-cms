@@ -1,5 +1,6 @@
 export interface ProductItemResponse {
   id: string;
+  slug?: string;
   categoryId: string | null;
   brandId: string | null;
   category: Category | null;

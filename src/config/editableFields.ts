@@ -17,7 +17,7 @@ export const EDITABLE_TABS_CONFIG: Record<ProductTabId, boolean> = {
   details: false,   // Product Details - read-only
   content: false,   // Pros & Cons - read-only
   specs: false,     // Specifications - read-only
-  links: false,     // Affiliate Links - read-only
+  links: true,      // Affiliate Links - แก้ไขได้
   json: false,      // Import JSON - ซ่อนใน edit mode
 };
 
@@ -33,6 +33,9 @@ export const EDITABLE_PAYLOAD_FIELDS = [
   "brandId",
   "image",         // heroImage maps to image
   "status",
+  // Affiliate Links fields
+  "affiliateLinks",
+  "affiliateLink",
 ] as const;
 
 export type EditablePayloadField = (typeof EDITABLE_PAYLOAD_FIELDS)[number];

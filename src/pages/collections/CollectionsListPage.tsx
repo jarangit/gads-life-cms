@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Pencil, Trash2, ListOrdered, CheckCircle, FileText, Package } from 'lucide-react'
+import { Plus, Pencil, Trash2, ListOrdered, CheckCircle, FileText } from 'lucide-react'
 import {
   Button,
   Table,
@@ -16,98 +16,57 @@ import {
   Badge,
   Select,
 } from '@/components/ui'
-import { PageHeader, StatusBadge, DeleteConfirmModal, useDeleteModal, StatsSummary } from '@/components/common'
-import type { Collection, ContentStatus, CollectionType } from '@/types'
-
-// Mock data for demo
-const mockCollections: Collection[] = [
-  {
-    id: '1',
-    title: 'Top 5 Laptops for Work in 2024',
-    slug: 'top-5-laptops-work-2024',
-    type: 'top-list',
-    description: 'The best laptops for productivity and remote work',
-    items: [
-      { productId: '1', rank: 1, note: 'Best overall performance' },
-      { productId: '4', rank: 2, note: 'Best Windows option' },
-    ],
-    status: 'published',
-    publishedAt: '2024-01-20T10:00:00Z',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-20T10:00:00Z',
-  },
-  {
-    id: '2',
-    title: 'Best Budget Smartphones Under $500',
-    slug: 'best-budget-smartphones-under-500',
-    type: 'budget',
-    description: 'Great smartphones that wont break the bank',
-    items: [
-      { productId: '2', rank: 1, note: 'Best value' },
-    ],
-    status: 'draft',
-    createdAt: '2024-01-16T10:00:00Z',
-    updatedAt: '2024-01-16T10:00:00Z',
-  },
-  {
-    id: '3',
-    title: 'Best Headphones for Music Lovers',
-    slug: 'best-headphones-music-lovers',
-    type: 'best-for',
-    description: 'Top picks for audiophiles',
-    items: [
-      { productId: '3', rank: 1, note: 'Best ANC' },
-    ],
-    status: 'published',
-    publishedAt: '2024-01-18T10:00:00Z',
-    createdAt: '2024-01-17T10:00:00Z',
-    updatedAt: '2024-01-18T10:00:00Z',
-  },
-]
+import { PageHeader, DeleteConfirmModal, useDeleteModal, StatsSummary } from '@/components/common'
+import { useCollections } from '@/api/queries/collection/list'
+import { useDeleteCollection } from '@/api/queries/collection/mutation'
+import type { CollectionType, CollectionStatus } from '@/api/types/collection'
 
 const collectionTypeLabels: Record<CollectionType, string> = {
-  'top-list': 'Top List',
-  'best-for': 'Best For',
-  'budget': 'Budget',
-  'custom': 'Custom',
+  TOP_LIST: 'Top List',
+  GUIDE: 'Guide',
+  COMPARISON: 'Comparison',
 }
 
 const collectionTypeBadgeColors: Record<CollectionType, 'default' | 'info' | 'success' | 'warning'> = {
-  'top-list': 'info',
-  'best-for': 'success',
-  'budget': 'warning',
-  'custom': 'default',
+  TOP_LIST: 'info',
+  GUIDE: 'success',
+  COMPARISON: 'warning',
+}
+
+const statusLabels: Record<CollectionStatus, string> = {
+  DRAFT: 'Draft',
+  PUBLISHED: 'Published',
+  ARCHIVED: 'Archived',
+}
+
+const statusBadgeColors: Record<CollectionStatus, 'default' | 'success' | 'warning'> = {
+  DRAFT: 'default',
+  PUBLISHED: 'success',
+  ARCHIVED: 'warning',
 }
 
 export function CollectionsListPage() {
-  const [collections, setCollections] = useState<Collection[]>([])
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<ContentStatus | ''>('')
+  const [statusFilter, setStatusFilter] = useState<CollectionStatus | ''>('')
   const [currentPage, setCurrentPage] = useState(1)
-  const [isLoading, setIsLoading] = useState(true)
   const deleteModal = useDeleteModal()
+
+  const { data: collections = [], isLoading } = useCollections()
+  const deleteCollection = useDeleteCollection()
 
   const itemsPerPage = 10
 
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setCollections(mockCollections)
-      setIsLoading(false)
-    }, 500)
-  }, [])
-
   const filteredCollections = collections.filter((collection) => {
-    const matchesSearch = collection.title.toLowerCase().includes(search.toLowerCase())
+    const matchesSearch = collection.titleTh.toLowerCase().includes(search.toLowerCase()) ||
+      collection.slug.toLowerCase().includes(search.toLowerCase())
     const matchesStatus = !statusFilter || collection.status === statusFilter
     return matchesSearch && matchesStatus
   })
 
   // Calculate stats
   const stats = useMemo(() => {
-    const published = collections.filter((c) => c.status === 'published').length
-    const draft = collections.filter((c) => c.status === 'draft').length
-    const totalItems = collections.reduce((sum, c) => sum + c.items.length, 0)
+    const published = collections.filter((c) => c.status === 'PUBLISHED').length
+    const draft = collections.filter((c) => c.status === 'DRAFT').length
 
     return [
       {
@@ -128,12 +87,6 @@ export function CollectionsListPage() {
         icon: <FileText className="h-5 w-5" />,
         color: 'yellow' as const,
       },
-      {
-        label: 'Total Items',
-        value: totalItems,
-        icon: <Package className="h-5 w-5" />,
-        color: 'purple' as const,
-      },
     ]
   }, [collections])
 
@@ -145,15 +98,19 @@ export function CollectionsListPage() {
 
   const handleDelete = () => {
     if (deleteModal.itemId) {
-      setCollections((prev) => prev.filter((c) => c.id !== deleteModal.itemId))
-      deleteModal.closeModal()
+      deleteCollection.mutate(deleteModal.itemId, {
+        onSuccess: () => {
+          deleteModal.closeModal()
+        },
+      })
     }
   }
 
   const statusOptions = [
     { value: '', label: 'All Status' },
-    { value: 'draft', label: 'Draft' },
-    { value: 'published', label: 'Published' },
+    { value: 'DRAFT', label: 'Draft' },
+    { value: 'PUBLISHED', label: 'Published' },
+    { value: 'ARCHIVED', label: 'Archived' },
   ]
 
   return (
@@ -169,7 +126,7 @@ export function CollectionsListPage() {
       />
 
       {/* Stats Summary */}
-      <StatsSummary stats={stats} className="mb-6 grid-cols-2 lg:grid-cols-4" />
+      <StatsSummary stats={stats} className="mb-6 grid-cols-3" />
 
       <Card>
         <div className="border-b border-slate-200 p-4">
@@ -184,7 +141,7 @@ export function CollectionsListPage() {
             <Select
               options={statusOptions}
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as ContentStatus | '')}
+              onChange={(e) => setStatusFilter(e.target.value as CollectionStatus | '')}
               className="w-full sm:w-40"
             />
           </div>
@@ -218,8 +175,9 @@ export function CollectionsListPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
+                  <TableHead>Slug</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Products</TableHead>
+                  <TableHead>Category</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
@@ -229,13 +187,18 @@ export function CollectionsListPage() {
                   <TableRow key={collection.id}>
                     <TableCell>
                       <div>
-                        <p className="font-medium text-slate-900">{collection.title}</p>
-                        {collection.description && (
+                        <p className="font-medium text-slate-900">{collection.titleTh}</p>
+                        {collection.titleEn && (
                           <p className="text-sm text-slate-500 line-clamp-1">
-                            {collection.description}
+                            {collection.titleEn}
                           </p>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <code className="rounded bg-slate-100 px-1.5 py-0.5 text-sm text-slate-600">
+                        {collection.slug}
+                      </code>
                     </TableCell>
                     <TableCell>
                       <Badge variant={collectionTypeBadgeColors[collection.type]}>
@@ -243,10 +206,12 @@ export function CollectionsListPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-slate-600">
-                      {collection.items.length} products
+                      {collection.category?.nameTh || <span className="text-slate-400">—</span>}
                     </TableCell>
                     <TableCell>
-                      <StatusBadge status={collection.status} />
+                      <Badge variant={statusBadgeColors[collection.status]}>
+                        {statusLabels[collection.status]}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">

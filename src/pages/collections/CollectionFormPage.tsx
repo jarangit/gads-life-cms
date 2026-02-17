@@ -86,8 +86,15 @@ export function CollectionFormPage() {
 
   const [selectedProductId, setSelectedProductId] = useState("");
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [editingNote, setEditingNote] = useState("");
   const [editingOrder, setEditingOrder] = useState(0);
+  const [editingNote, setEditingNote] = useState("");
+  const [editingOriginalPrice, setEditingOriginalPrice] = useState("");
+  const [editingDealPrice, setEditingDealPrice] = useState("");
+  const [editingCurrency, setEditingCurrency] = useState("THB");
+  const [editingDealBadge, setEditingDealBadge] = useState("");
+  const [editingDealUrl, setEditingDealUrl] = useState("");
+  const [editingDealStartAt, setEditingDealStartAt] = useState("");
+  const [editingDealEndAt, setEditingDealEndAt] = useState("");
 
   const {
     register,
@@ -195,16 +202,30 @@ export function CollectionFormPage() {
 
   const handleStartEdit = (item: ICollectionItemProduct) => {
     setEditingItemId(item.id);
-    setEditingNote(item.note ?? "");
     setEditingOrder(item.orderIndex);
+    setEditingNote(item.note ?? "");
+    setEditingOriginalPrice(item.originalPrice != null ? String(item.originalPrice) : "");
+    setEditingDealPrice(item.dealPrice != null ? String(item.dealPrice) : "");
+    setEditingCurrency(item.currency || "THB");
+    setEditingDealBadge(item.dealBadge ?? "");
+    setEditingDealUrl(item.dealUrl ?? "");
+    setEditingDealStartAt(item.dealStartAt ? item.dealStartAt.slice(0, 16) : "");
+    setEditingDealEndAt(item.dealEndAt ? item.dealEndAt.slice(0, 16) : "");
   };
 
   const handleSaveEdit = async (itemId: string) => {
     await updateItem.mutateAsync({
       id: itemId,
       payload: {
-        note: editingNote || null,
         orderIndex: editingOrder,
+        note: editingNote || null,
+        originalPrice: editingOriginalPrice ? Number(editingOriginalPrice) : null,
+        dealPrice: editingDealPrice ? Number(editingDealPrice) : null,
+        currency: editingCurrency || "THB",
+        dealBadge: editingDealBadge || null,
+        dealUrl: editingDealUrl || null,
+        dealStartAt: editingDealStartAt || null,
+        dealEndAt: editingDealEndAt || null,
       },
     });
     setEditingItemId(null);
@@ -215,7 +236,7 @@ export function CollectionFormPage() {
   };
 
   // Products available to add (exclude already added ones)
-  const productsList = productsData?.items ?? [];
+  const productsList = productsData?.data?.items ?? [];
   const addedProductIds = new Set(
     collectionItems.map((item) => item.productId),
   );
@@ -483,27 +504,102 @@ export function CollectionFormPage() {
                               </p>
 
                               {editingItemId === item.id ? (
-                                <div className="mt-2 flex flex-col gap-2">
-                                  <div className="flex gap-2">
+                                <div className="mt-3 space-y-3 rounded-lg border border-blue-200 bg-blue-50/50 p-3">
+                                  {/* Row 1: Order & Note */}
+                                  <div className="grid gap-2 sm:grid-cols-[80px_1fr]">
                                     <Input
+                                      label="Order"
                                       value={editingOrder}
                                       onChange={(e) =>
                                         setEditingOrder(Number(e.target.value))
                                       }
                                       type="number"
-                                      placeholder="Order"
-                                      className="w-24"
+                                      min={0}
                                     />
                                     <Input
+                                      label="Note"
                                       value={editingNote}
                                       onChange={(e) =>
                                         setEditingNote(e.target.value)
                                       }
-                                      placeholder="Note (e.g., Best overall)"
-                                      className="flex-1"
+                                      placeholder="e.g., Best overall"
                                     />
                                   </div>
-                                  <div className="flex gap-2">
+
+                                  {/* Row 2: Pricing */}
+                                  <div className="grid gap-2 sm:grid-cols-3">
+                                    <Input
+                                      label="Original Price"
+                                      value={editingOriginalPrice}
+                                      onChange={(e) =>
+                                        setEditingOriginalPrice(e.target.value)
+                                      }
+                                      type="number"
+                                      min={0}
+                                      placeholder="0"
+                                    />
+                                    <Input
+                                      label="Deal Price"
+                                      value={editingDealPrice}
+                                      onChange={(e) =>
+                                        setEditingDealPrice(e.target.value)
+                                      }
+                                      type="number"
+                                      min={0}
+                                      placeholder="0"
+                                    />
+                                    <Input
+                                      label="Currency"
+                                      value={editingCurrency}
+                                      onChange={(e) =>
+                                        setEditingCurrency(e.target.value)
+                                      }
+                                      placeholder="THB"
+                                    />
+                                  </div>
+
+                                  {/* Row 3: Deal Badge & URL */}
+                                  <div className="grid gap-2 sm:grid-cols-[1fr_2fr]">
+                                    <Input
+                                      label="Deal Badge"
+                                      value={editingDealBadge}
+                                      onChange={(e) =>
+                                        setEditingDealBadge(e.target.value)
+                                      }
+                                      placeholder="e.g., -30%, Flash Sale"
+                                    />
+                                    <Input
+                                      label="Deal URL"
+                                      value={editingDealUrl}
+                                      onChange={(e) =>
+                                        setEditingDealUrl(e.target.value)
+                                      }
+                                      placeholder="https://..."
+                                    />
+                                  </div>
+
+                                  {/* Row 4: Deal Dates */}
+                                  <div className="grid gap-2 sm:grid-cols-2">
+                                    <Input
+                                      label="Deal Start"
+                                      type="datetime-local"
+                                      value={editingDealStartAt}
+                                      onChange={(e) =>
+                                        setEditingDealStartAt(e.target.value)
+                                      }
+                                    />
+                                    <Input
+                                      label="Deal End"
+                                      type="datetime-local"
+                                      value={editingDealEndAt}
+                                      onChange={(e) =>
+                                        setEditingDealEndAt(e.target.value)
+                                      }
+                                    />
+                                  </div>
+
+                                  {/* Actions */}
+                                  <div className="flex gap-2 pt-1">
                                     <Button
                                       type="button"
                                       size="sm"
@@ -523,38 +619,52 @@ export function CollectionFormPage() {
                                   </div>
                                 </div>
                               ) : (
-                                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                                  <span>Order: {item.orderIndex}</span>
-                                  {item.note && (
-                                    <>
-                                      <span>•</span>
-                                      <span className="italic">
-                                        "{item.note}"
-                                      </span>
-                                    </>
-                                  )}
-                                  {item.dealPrice != null && (
-                                    <>
-                                      <span>•</span>
-                                      <span className="font-medium text-green-600">
-                                        Deal: {item.dealPrice.toLocaleString()}{" "}
-                                        {item.currency}
-                                      </span>
-                                    </>
-                                  )}
-                                  {item.dealUrl && (
-                                    <>
-                                      <span>•</span>
-                                      <a
-                                        href={item.dealUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-0.5 text-blue-500 hover:underline"
-                                      >
-                                        Deal Link{" "}
-                                        <ExternalLink className="h-3 w-3" />
-                                      </a>
-                                    </>
+                                <div className="mt-1 space-y-1">
+                                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                    <span>Order: {item.orderIndex}</span>
+                                    {item.note && (
+                                      <>
+                                        <span>•</span>
+                                        <span className="italic">
+                                          &ldquo;{item.note}&rdquo;
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                  {(item.originalPrice != null ||
+                                    item.dealPrice != null ||
+                                    item.dealBadge ||
+                                    item.dealUrl) && (
+                                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                                      {item.originalPrice != null && (
+                                        <span className="text-slate-400 line-through">
+                                          {item.originalPrice.toLocaleString()}{" "}
+                                          {item.currency}
+                                        </span>
+                                      )}
+                                      {item.dealPrice != null && (
+                                        <span className="font-medium text-green-600">
+                                          {item.dealPrice.toLocaleString()}{" "}
+                                          {item.currency}
+                                        </span>
+                                      )}
+                                      {item.dealBadge && (
+                                        <span className="rounded bg-orange-100 px-1.5 py-0.5 text-orange-700">
+                                          {item.dealBadge}
+                                        </span>
+                                      )}
+                                      {item.dealUrl && (
+                                        <a
+                                          href={item.dealUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-0.5 text-blue-500 hover:underline"
+                                        >
+                                          Deal Link{" "}
+                                          <ExternalLink className="h-3 w-3" />
+                                        </a>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                               )}

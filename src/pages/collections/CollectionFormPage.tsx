@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Package, ExternalLink } from 'lucide-react'
 import {
   Button,
   Input,
@@ -11,13 +11,24 @@ import {
   CardHeader,
   CardTitle,
   CardContent,
-  ImageUpload,
 } from '@/components/ui'
-import { PageHeader } from '@/components/common'
+import { PageHeader, DeleteConfirmModal, useDeleteModal } from '@/components/common'
 import { useCollection } from '@/api/queries/collection/detail'
 import { useCreateCollection, useUpdateCollection } from '@/api/queries/collection/mutation'
 import { useCategories } from '@/api/queries/category/list'
-import type { ICreateCollectionPayload, IUpdateCollectionPayload, CollectionType, CollectionStatus } from '@/api/types/collection'
+import { useProducts } from '@/api/queries/product/product'
+import {
+  useCreateCollectionItem,
+  useUpdateCollectionItem,
+  useDeleteCollectionItem,
+} from '@/api/queries/collection-item/mutation'
+import type {
+  ICreateCollectionPayload,
+  IUpdateCollectionPayload,
+  CollectionType,
+  CollectionStatus,
+  ICollectionItemProduct,
+} from '@/api/types/collection'
 
 interface CollectionFormValues {
   type: CollectionType
@@ -46,6 +57,18 @@ export function CollectionFormPage() {
   const createCollection = useCreateCollection()
   const updateCollection = useUpdateCollection(id ?? '')
   const { data: categoriesData } = useCategories()
+  const { data: productsData } = useProducts()
+
+  // Collection item mutations
+  const createItem = useCreateCollectionItem()
+  const updateItem = useUpdateCollectionItem(id ?? '')
+  const deleteItem = useDeleteCollectionItem(id ?? '')
+  const deleteModal = useDeleteModal()
+
+  const [selectedProductId, setSelectedProductId] = useState('')
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
+  const [editingNote, setEditingNote] = useState('')
+  const [editingOrder, setEditingOrder] = useState(0)
 
   const {
     register,
@@ -125,6 +148,65 @@ export function CollectionFormPage() {
       console.error('Failed to save collection:', error)
     }
   }
+
+  // --- Collection Item Handlers ---
+  const collectionItems: ICollectionItemProduct[] = collection?.items ?? []
+
+  const handleAddProduct = async () => {
+    if (!selectedProductId || !id) return
+    try {
+      await createItem.mutateAsync({
+        collectionId: id,
+        productId: selectedProductId,
+        orderIndex: collectionItems.length,
+      })
+      setSelectedProductId('')
+    } catch (error) {
+      console.error('Failed to add product:', error)
+    }
+  }
+
+  const handleDeleteItem = () => {
+    if (deleteModal.itemId) {
+      deleteItem.mutate(deleteModal.itemId, {
+        onSuccess: () => deleteModal.closeModal(),
+      })
+    }
+  }
+
+  const handleStartEdit = (item: ICollectionItemProduct) => {
+    setEditingItemId(item.id)
+    setEditingNote(item.note ?? '')
+    setEditingOrder(item.orderIndex)
+  }
+
+  const handleSaveEdit = async (itemId: string) => {
+    await updateItem.mutateAsync({
+      id: itemId,
+      payload: {
+        note: editingNote || null,
+        orderIndex: editingOrder,
+      },
+    })
+    setEditingItemId(null)
+  }
+
+  const handleCancelEdit = () => {
+    setEditingItemId(null)
+  }
+
+  // Products available to add (exclude already added ones)
+  const productsList = productsData?.data?.items ?? []
+  const addedProductIds = new Set(collectionItems.map((item) => item.productId))
+  const availableProducts = productsList.filter((p) => !addedProductIds.has(p.id))
+
+  const productOptions = [
+    { value: '', label: 'Select a product to add...' },
+    ...availableProducts.map((p) => ({
+      value: p.id,
+      label: `${p.name}${p.brand ? ` (${p.brand.name})` : ''}`,
+    })),
+  ]
 
   const typeOptions = [
     { value: 'TOP_LIST', label: 'Top List' },
@@ -237,6 +319,202 @@ export function CollectionFormPage() {
                 />
               </CardContent>
             </Card>
+
+            {/* Collection Items - only show in edit mode */}
+            {isEditing && id && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    Collection Items
+                    <span className="ml-2 text-sm font-normal text-slate-500">
+                      ({collectionItems.length} products)
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Add product */}
+                  <div className="flex gap-2">
+                    <Select
+                      options={productOptions}
+                      value={selectedProductId}
+                      onChange={(e) => setSelectedProductId(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleAddProduct}
+                      disabled={!selectedProductId || createItem.isPending}
+                      isLoading={createItem.isPending}
+                      leftIcon={<Plus className="h-4 w-4" />}
+                    >
+                      Add
+                    </Button>
+                  </div>
+
+                  {/* Items list */}
+                  {collectionItems.length === 0 ? (
+                    <div className="rounded-lg border-2 border-dashed border-slate-200 py-8 text-center">
+                      <Package className="mx-auto h-8 w-8 text-slate-400" />
+                      <p className="mt-2 text-sm text-slate-500">
+                        No products in this collection yet. Select a product above to get started.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {[...collectionItems]
+                        .sort((a, b) => a.orderIndex - b.orderIndex)
+                        .map((item, index) => (
+                          <div
+                            key={item.id}
+                            className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3"
+                          >
+                            {/* Rank number */}
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-600">
+                              {index + 1}
+                            </div>
+
+                            {/* Product image */}
+                            {item.product?.image ? (
+                              <img
+                                src={item.product.image}
+                                alt={item.product.name}
+                                className="h-12 w-12 shrink-0 rounded-lg border border-slate-200 object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50">
+                                <Package className="h-5 w-5 text-slate-400" />
+                              </div>
+                            )}
+
+                            {/* Product info */}
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate font-medium text-slate-900">
+                                {item.product?.name ?? 'Unknown Product'}
+                              </p>
+                              <p className="text-sm text-slate-500">
+                                {item.product?.subtitle}
+                              </p>
+
+                              {editingItemId === item.id ? (
+                                <div className="mt-2 flex flex-col gap-2">
+                                  <div className="flex gap-2">
+                                    <Input
+                                      value={editingOrder}
+                                      onChange={(e) => setEditingOrder(Number(e.target.value))}
+                                      type="number"
+                                      placeholder="Order"
+                                      className="w-24"
+                                    />
+                                    <Input
+                                      value={editingNote}
+                                      onChange={(e) => setEditingNote(e.target.value)}
+                                      placeholder="Note (e.g., Best overall)"
+                                      className="flex-1"
+                                    />
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      onClick={() => handleSaveEdit(item.id)}
+                                      isLoading={updateItem.isPending}
+                                    >
+                                      Save
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={handleCancelEdit}
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                  <span>Order: {item.orderIndex}</span>
+                                  {item.note && (
+                                    <>
+                                      <span>•</span>
+                                      <span className="italic">"{item.note}"</span>
+                                    </>
+                                  )}
+                                  {item.dealPrice != null && (
+                                    <>
+                                      <span>•</span>
+                                      <span className="font-medium text-green-600">
+                                        Deal: {item.dealPrice.toLocaleString()} {item.currency}
+                                      </span>
+                                    </>
+                                  )}
+                                  {item.dealUrl && (
+                                    <>
+                                      <span>•</span>
+                                      <a
+                                        href={item.dealUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-0.5 text-blue-500 hover:underline"
+                                      >
+                                        Deal Link <ExternalLink className="h-3 w-3" />
+                                      </a>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Actions */}
+                            {editingItemId !== item.id && (
+                              <div className="flex shrink-0 items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleStartEdit(item)}
+                                  className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                                  title="Edit"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-4 w-4"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth={2}
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <path d="M17 3a2.85 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                                    <path d="m15 5 4 4" />
+                                  </svg>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => deleteModal.openModal(item.id)}
+                                  className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                                  title="Remove"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {!isEditing && (
+              <Card>
+                <CardContent className="py-6">
+                  <p className="text-center text-sm text-slate-500">
+                    Save the collection first, then you can add products to it.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar */}
@@ -270,9 +548,39 @@ export function CollectionFormPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {isEditing && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Summary</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <dl className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <dt className="text-slate-500">Products</dt>
+                      <dd className="font-medium text-slate-900">{collectionItems.length}</dd>
+                    </div>
+                    <div className="flex justify-between">
+                      <dt className="text-slate-500">Category</dt>
+                      <dd className="font-medium text-slate-900">
+                        {collection?.category?.nameTh || '—'}
+                      </dd>
+                    </div>
+                  </dl>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </form>
+
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={deleteModal.closeModal}
+        onConfirm={handleDeleteItem}
+        title="Remove Product"
+        message="Are you sure you want to remove this product from the collection?"
+      />
     </div>
   )
 }

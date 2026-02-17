@@ -27,14 +27,51 @@ export interface ICollectionItemProduct {
   id: string;
   collectionId: string;
   productId: string;
-  rank: number;
+  orderIndex: number;
+  originalPrice: number | null;
+  dealPrice: number | null;
+  currency: string;
+  dealStartAt: string | null;
+  dealEndAt: string | null;
+  dealBadge: string | null;
+  dealUrl: string | null;
   note: string | null;
+  createdAt: string;
   product?: {
     id: string;
     name: string;
     slug: string;
-    heroImage: string | null;
+    image: string | null;
+    subtitle: string;
+    price: number;
+    currency: string;
   };
+}
+
+export interface ICreateCollectionItemPayload {
+  collectionId: string;
+  productId: string;
+  orderIndex?: number;
+  originalPrice?: number | null;
+  dealPrice?: number | null;
+  currency?: string;
+  dealStartAt?: string | null;
+  dealEndAt?: string | null;
+  dealBadge?: string | null;
+  dealUrl?: string | null;
+  note?: string | null;
+}
+
+export interface IUpdateCollectionItemPayload {
+  orderIndex?: number;
+  originalPrice?: number | null;
+  dealPrice?: number | null;
+  currency?: string;
+  dealStartAt?: string | null;
+  dealEndAt?: string | null;
+  dealBadge?: string | null;
+  dealUrl?: string | null;
+  note?: string | null;
 }
 
 export interface ICreateCollectionPayload {

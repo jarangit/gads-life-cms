@@ -9,4 +9,7 @@ export const qk = {
   collections: (params?: Record<string, string | number | boolean>) =>
     ["collections", params ?? {}] as const,
   collection: (id: string) => ["collection", id] as const,
+
+  collectionItems: (collectionId: string) =>
+    ["collection-items", collectionId] as const,
 };

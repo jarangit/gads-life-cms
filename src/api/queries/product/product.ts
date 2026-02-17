@@ -13,23 +13,24 @@ export interface ProductListParams {
   status?: string;
   search?: string;
   page?: number;
+  categoryId?: string;
+  brandId?: string;
+  enabled?: boolean;
 }
 
 export function useProducts(params: ProductListParams = {}) {
+  const { enabled = true, ...rest } = params;
   const queryParams = Object.fromEntries(
-    Object.entries(params).filter(([, v]) => v !== undefined),
+    Object.entries(rest).filter(([, v]) => v !== undefined && v !== ""),
   ) as Record<string, string | number | boolean>;
 
   return useQuery({
     queryKey: qk.products(queryParams),
     queryFn: () =>
       http<ApiResponse<ProductListResponse>>("/admin/products", {
-        // params: {
-        //   status: params.status,
-        //   search: params.search,
-        //   page: params.page,
-        // },
+        params: queryParams,
       }),
     select: (response) => response,
+    enabled,
   });
 }

@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
-import { ArrowLeft, Plus, Trash2, Package, ExternalLink } from 'lucide-react'
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { ArrowLeft, Plus, Trash2, Package, ExternalLink } from "lucide-react";
 import {
   Button,
   Input,
@@ -11,64 +11,83 @@ import {
   CardHeader,
   CardTitle,
   CardContent,
-} from '@/components/ui'
-import { PageHeader, DeleteConfirmModal, useDeleteModal } from '@/components/common'
-import { useCollection } from '@/api/queries/collection/detail'
-import { useCreateCollection, useUpdateCollection } from '@/api/queries/collection/mutation'
-import { useCategories } from '@/api/queries/category/list'
-import { useProducts } from '@/api/queries/product/product'
+} from "@/components/ui";
+import {
+  PageHeader,
+  DeleteConfirmModal,
+  useDeleteModal,
+} from "@/components/common";
+import { useCollection } from "@/api/queries/collection/detail";
+import {
+  useCreateCollection,
+  useUpdateCollection,
+} from "@/api/queries/collection/mutation";
+import { useCategories } from "@/api/queries/category/list";
+import { useBrands } from "@/api/queries/brands/list";
+import { useProducts } from "@/api/queries/product/product";
 import {
   useCreateCollectionItem,
   useUpdateCollectionItem,
   useDeleteCollectionItem,
-} from '@/api/queries/collection-item/mutation'
+} from "@/api/queries/collection-item/mutation";
 import type {
   ICreateCollectionPayload,
   IUpdateCollectionPayload,
   CollectionType,
   CollectionStatus,
   ICollectionItemProduct,
-} from '@/api/types/collection'
+} from "@/api/types/collection";
 
 interface CollectionFormValues {
-  type: CollectionType
-  slug: string
-  titleTh: string
-  titleEn: string
-  excerpt: string
-  coverImage: string
-  categoryId: string
-  status: CollectionStatus
+  type: CollectionType;
+  slug: string;
+  titleTh: string;
+  titleEn: string;
+  excerpt: string;
+  coverImage: string;
+  categoryId: string;
+  status: CollectionStatus;
 }
 
 function generateSlug(name: string): string {
   return name
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 }
 
 export function CollectionFormPage() {
-  const navigate = useNavigate()
-  const { id } = useParams()
-  const isEditing = Boolean(id)
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditing = Boolean(id);
 
-  const { data: collection, isLoading } = useCollection(id)
-  const createCollection = useCreateCollection()
-  const updateCollection = useUpdateCollection(id ?? '')
-  const { data: categoriesData } = useCategories()
-  const { data: productsData } = useProducts()
+  const { data: collection, isLoading } = useCollection(id);
+  const createCollection = useCreateCollection();
+  const updateCollection = useUpdateCollection(id ?? "");
+  const { data: categoriesData } = useCategories();
+  const { data: brandsData } = useBrands();
+
+  // Product filter states
+  const [filterBrandId, setFilterBrandId] = useState("");
+  const [filterCategoryId, setFilterCategoryId] = useState("");
+
+  const hasProductFilter = Boolean(filterBrandId || filterCategoryId);
+  const { data: productsData, isLoading: isLoadingProducts } = useProducts({
+    brandId: filterBrandId || undefined,
+    categoryId: filterCategoryId || undefined,
+    enabled: hasProductFilter,
+  });
 
   // Collection item mutations
-  const createItem = useCreateCollectionItem()
-  const updateItem = useUpdateCollectionItem(id ?? '')
-  const deleteItem = useDeleteCollectionItem(id ?? '')
-  const deleteModal = useDeleteModal()
+  const createItem = useCreateCollectionItem();
+  const updateItem = useUpdateCollectionItem(id ?? "");
+  const deleteItem = useDeleteCollectionItem(id ?? "");
+  const deleteModal = useDeleteModal();
 
-  const [selectedProductId, setSelectedProductId] = useState('')
-  const [editingItemId, setEditingItemId] = useState<string | null>(null)
-  const [editingNote, setEditingNote] = useState('')
-  const [editingOrder, setEditingOrder] = useState(0)
+  const [selectedProductId, setSelectedProductId] = useState("");
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingNote, setEditingNote] = useState("");
+  const [editingOrder, setEditingOrder] = useState(0);
 
   const {
     register,
@@ -79,25 +98,25 @@ export function CollectionFormPage() {
     formState: { errors },
   } = useForm<CollectionFormValues>({
     defaultValues: {
-      type: 'TOP_LIST',
-      slug: '',
-      titleTh: '',
-      titleEn: '',
-      excerpt: '',
-      coverImage: '',
-      categoryId: '',
-      status: 'DRAFT',
+      type: "TOP_LIST",
+      slug: "",
+      titleTh: "",
+      titleEn: "",
+      excerpt: "",
+      coverImage: "",
+      categoryId: "",
+      status: "DRAFT",
     },
-  })
+  });
 
-  const titleThValue = watch('titleTh')
+  const titleThValue = watch("titleTh");
 
   // Auto-generate slug from titleTh (create mode only)
   useEffect(() => {
     if (!isEditing && titleThValue !== undefined) {
-      setValue('slug', generateSlug(titleThValue))
+      setValue("slug", generateSlug(titleThValue));
     }
-  }, [titleThValue, isEditing, setValue])
+  }, [titleThValue, isEditing, setValue]);
 
   // Populate form when collection data loads (edit mode)
   useEffect(() => {
@@ -106,16 +125,16 @@ export function CollectionFormPage() {
         type: collection.type,
         slug: collection.slug,
         titleTh: collection.titleTh,
-        titleEn: collection.titleEn ?? '',
-        excerpt: collection.excerpt ?? '',
-        coverImage: collection.coverImage ?? '',
-        categoryId: collection.categoryId ?? '',
+        titleEn: collection.titleEn ?? "",
+        excerpt: collection.excerpt ?? "",
+        coverImage: collection.coverImage ?? "",
+        categoryId: collection.categoryId ?? "",
         status: collection.status,
-      })
+      });
     }
-  }, [collection, reset])
+  }, [collection, reset]);
 
-  const isSaving = createCollection.isPending || updateCollection.isPending
+  const isSaving = createCollection.isPending || updateCollection.isPending;
 
   const onSubmit = async (data: CollectionFormValues) => {
     try {
@@ -129,8 +148,8 @@ export function CollectionFormPage() {
           coverImage: data.coverImage || undefined,
           categoryId: data.categoryId || undefined,
           status: data.status,
-        }
-        await updateCollection.mutateAsync(payload)
+        };
+        await updateCollection.mutateAsync(payload);
       } else {
         const payload: ICreateCollectionPayload = {
           type: data.type,
@@ -140,45 +159,45 @@ export function CollectionFormPage() {
           excerpt: data.excerpt || undefined,
           coverImage: data.coverImage || undefined,
           categoryId: data.categoryId || undefined,
-        }
-        await createCollection.mutateAsync(payload)
+        };
+        await createCollection.mutateAsync(payload);
       }
-      navigate('/collections')
+      navigate("/collections");
     } catch (error) {
-      console.error('Failed to save collection:', error)
+      console.error("Failed to save collection:", error);
     }
-  }
+  };
 
   // --- Collection Item Handlers ---
-  const collectionItems: ICollectionItemProduct[] = collection?.items ?? []
+  const collectionItems: ICollectionItemProduct[] = collection?.items ?? [];
 
   const handleAddProduct = async () => {
-    if (!selectedProductId || !id) return
+    if (!selectedProductId || !id) return;
     try {
       await createItem.mutateAsync({
         collectionId: id,
         productId: selectedProductId,
         orderIndex: collectionItems.length,
-      })
-      setSelectedProductId('')
+      });
+      setSelectedProductId("");
     } catch (error) {
-      console.error('Failed to add product:', error)
+      console.error("Failed to add product:", error);
     }
-  }
+  };
 
   const handleDeleteItem = () => {
     if (deleteModal.itemId) {
       deleteItem.mutate(deleteModal.itemId, {
         onSuccess: () => deleteModal.closeModal(),
-      })
+      });
     }
-  }
+  };
 
   const handleStartEdit = (item: ICollectionItemProduct) => {
-    setEditingItemId(item.id)
-    setEditingNote(item.note ?? '')
-    setEditingOrder(item.orderIndex)
-  }
+    setEditingItemId(item.id);
+    setEditingNote(item.note ?? "");
+    setEditingOrder(item.orderIndex);
+  };
 
   const handleSaveEdit = async (itemId: string) => {
     await updateItem.mutateAsync({
@@ -187,61 +206,83 @@ export function CollectionFormPage() {
         note: editingNote || null,
         orderIndex: editingOrder,
       },
-    })
-    setEditingItemId(null)
-  }
+    });
+    setEditingItemId(null);
+  };
 
   const handleCancelEdit = () => {
-    setEditingItemId(null)
-  }
+    setEditingItemId(null);
+  };
 
   // Products available to add (exclude already added ones)
-  const productsList = productsData?.data?.items ?? []
-  const addedProductIds = new Set(collectionItems.map((item) => item.productId))
-  const availableProducts = productsList.filter((p) => !addedProductIds.has(p.id))
+  const productsList = productsData?.items ?? [];
+  const addedProductIds = new Set(
+    collectionItems.map((item) => item.productId),
+  );
+  const availableProducts = productsList.filter(
+    (p) => !addedProductIds.has(p.id),
+  );
 
   const productOptions = [
-    { value: '', label: 'Select a product to add...' },
+    { value: "", label: "Select a product to add..." },
     ...availableProducts.map((p) => ({
       value: p.id,
-      label: `${p.name}${p.brand ? ` (${p.brand.name})` : ''}`,
+      label: `${p.name}${p.brand ? ` (${p.brand.name})` : ""}`,
     })),
-  ]
+  ];
 
   const typeOptions = [
-    { value: 'TOP_LIST', label: 'Top List' },
-    { value: 'GUIDE', label: 'Guide' },
-    { value: 'COMPARISON', label: 'Comparison' },
-  ]
+    { value: "TOP_LIST", label: "Top List" },
+    { value: "GUIDE", label: "Guide" },
+    { value: "COMPARISON", label: "Comparison" },
+  ];
 
   const statusOptions = [
-    { value: 'DRAFT', label: 'Draft' },
-    { value: 'PUBLISHED', label: 'Published' },
-    { value: 'ARCHIVED', label: 'Archived' },
-  ]
+    { value: "DRAFT", label: "Draft" },
+    { value: "PUBLISHED", label: "Published" },
+    { value: "ARCHIVED", label: "Archived" },
+  ];
 
   const categoryOptions = [
-    { value: '', label: 'No category' },
-    ...(categoriesData?.items?.map((c) => ({ value: c.id, label: c.nameTh || c.slug })) ?? []),
-  ]
+    { value: "", label: "No category" },
+    ...(categoriesData?.items?.map((c) => ({
+      value: c.id,
+      label: c.nameTh || c.slug,
+    })) ?? []),
+  ];
+
+  const brandFilterOptions = [
+    { value: "", label: "All brands" },
+    ...(brandsData?.map((b) => ({ value: b.id, label: b.name })) ?? []),
+  ];
+
+  const categoryFilterOptions = [
+    { value: "", label: "All categories" },
+    ...(categoriesData?.items?.map((c) => ({
+      value: c.id,
+      label: c.nameTh || c.slug,
+    })) ?? []),
+  ];
 
   if (isLoading && isEditing) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
       </div>
-    )
+    );
   }
 
   return (
     <div>
       <PageHeader
-        title={isEditing ? 'Edit Collection' : 'New Collection'}
-        description={isEditing ? 'Update collection details' : 'Create a new collection'}
+        title={isEditing ? "Edit Collection" : "New Collection"}
+        description={
+          isEditing ? "Update collection details" : "Create a new collection"
+        }
         actions={
           <Button
             variant="ghost"
-            onClick={() => navigate('/collections')}
+            onClick={() => navigate("/collections")}
             leftIcon={<ArrowLeft className="h-4 w-4" />}
           >
             Back
@@ -262,13 +303,15 @@ export function CollectionFormPage() {
                   label="Title (Thai)"
                   placeholder="e.g., 5 อันดับหุ่นยนต์ดูดฝุ่นที่ดีที่สุด"
                   error={errors.titleTh?.message}
-                  {...register('titleTh', { required: 'Title (Thai) is required' })}
+                  {...register("titleTh", {
+                    required: "Title (Thai) is required",
+                  })}
                 />
 
                 <Input
                   label="Title (English)"
                   placeholder="e.g., Top 5 Best Robot Vacuums"
-                  {...register('titleEn')}
+                  {...register("titleEn")}
                 />
 
                 <Input
@@ -276,11 +319,12 @@ export function CollectionFormPage() {
                   hint="URL-friendly identifier"
                   placeholder="e.g., top-5-robot-vacuums"
                   error={errors.slug?.message}
-                  {...register('slug', {
-                    required: 'Slug is required',
+                  {...register("slug", {
+                    required: "Slug is required",
                     pattern: {
                       value: /^[a-z0-9-]+$/,
-                      message: 'Slug can only contain lowercase letters, numbers, and hyphens',
+                      message:
+                        "Slug can only contain lowercase letters, numbers, and hyphens",
                     },
                   })}
                 />
@@ -288,20 +332,20 @@ export function CollectionFormPage() {
                 <Select
                   label="Type"
                   options={typeOptions}
-                  {...register('type', { required: 'Type is required' })}
+                  {...register("type", { required: "Type is required" })}
                 />
 
                 <Select
                   label="Category"
                   options={categoryOptions}
-                  {...register('categoryId')}
+                  {...register("categoryId")}
                 />
 
                 <Textarea
                   label="Excerpt"
                   placeholder="Brief description of this collection"
                   rows={3}
-                  {...register('excerpt')}
+                  {...register("excerpt")}
                 />
               </CardContent>
             </Card>
@@ -315,7 +359,7 @@ export function CollectionFormPage() {
                   label="Cover Image URL"
                   type="url"
                   placeholder="https://example.com/image.jpg"
-                  {...register('coverImage')}
+                  {...register("coverImage")}
                 />
               </CardContent>
             </Card>
@@ -332,23 +376,65 @@ export function CollectionFormPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Add product */}
-                  <div className="flex gap-2">
-                    <Select
-                      options={productOptions}
-                      value={selectedProductId}
-                      onChange={(e) => setSelectedProductId(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      onClick={handleAddProduct}
-                      disabled={!selectedProductId || createItem.isPending}
-                      isLoading={createItem.isPending}
-                      leftIcon={<Plus className="h-4 w-4" />}
-                    >
-                      Add
-                    </Button>
+                  {/* Product filter & add */}
+                  <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                      Add Product
+                    </p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <Select
+                        label="Brand"
+                        options={brandFilterOptions}
+                        value={filterBrandId}
+                        onChange={(e) => {
+                          setFilterBrandId(e.target.value);
+                          setSelectedProductId("");
+                        }}
+                        className="w-full"
+                      />
+                      <Select
+                        label="Category"
+                        options={categoryFilterOptions}
+                        value={filterCategoryId}
+                        onChange={(e) => {
+                          setFilterCategoryId(e.target.value);
+                          setSelectedProductId("");
+                        }}
+                        className="w-full"
+                      />
+                    </div>
+
+                    {!hasProductFilter ? (
+                      <p className="text-sm text-slate-400 text-center py-1">
+                        Select a brand or category to search for products
+                      </p>
+                    ) : isLoadingProducts ? (
+                      <div className="flex items-center justify-center py-2">
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+                        <span className="ml-2 text-sm text-slate-500">
+                          Loading products...
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2 items-end">
+                        <Select
+                          label={`Product (${availableProducts.length} available)`}
+                          options={productOptions}
+                          value={selectedProductId}
+                          onChange={(e) => setSelectedProductId(e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          onClick={handleAddProduct}
+                          disabled={!selectedProductId || createItem.isPending}
+                          isLoading={createItem.isPending}
+                          leftIcon={<Plus className="h-4 w-4" />}
+                        >
+                          Add
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Items list */}
@@ -356,7 +442,8 @@ export function CollectionFormPage() {
                     <div className="rounded-lg border-2 border-dashed border-slate-200 py-8 text-center">
                       <Package className="mx-auto h-8 w-8 text-slate-400" />
                       <p className="mt-2 text-sm text-slate-500">
-                        No products in this collection yet. Select a product above to get started.
+                        No products in this collection yet. Select a product
+                        above to get started.
                       </p>
                     </div>
                   ) : (
@@ -389,7 +476,7 @@ export function CollectionFormPage() {
                             {/* Product info */}
                             <div className="min-w-0 flex-1">
                               <p className="truncate font-medium text-slate-900">
-                                {item.product?.name ?? 'Unknown Product'}
+                                {item.product?.name ?? "Unknown Product"}
                               </p>
                               <p className="text-sm text-slate-500">
                                 {item.product?.subtitle}
@@ -400,14 +487,18 @@ export function CollectionFormPage() {
                                   <div className="flex gap-2">
                                     <Input
                                       value={editingOrder}
-                                      onChange={(e) => setEditingOrder(Number(e.target.value))}
+                                      onChange={(e) =>
+                                        setEditingOrder(Number(e.target.value))
+                                      }
                                       type="number"
                                       placeholder="Order"
                                       className="w-24"
                                     />
                                     <Input
                                       value={editingNote}
-                                      onChange={(e) => setEditingNote(e.target.value)}
+                                      onChange={(e) =>
+                                        setEditingNote(e.target.value)
+                                      }
                                       placeholder="Note (e.g., Best overall)"
                                       className="flex-1"
                                     />
@@ -437,14 +528,17 @@ export function CollectionFormPage() {
                                   {item.note && (
                                     <>
                                       <span>•</span>
-                                      <span className="italic">"{item.note}"</span>
+                                      <span className="italic">
+                                        "{item.note}"
+                                      </span>
                                     </>
                                   )}
                                   {item.dealPrice != null && (
                                     <>
                                       <span>•</span>
                                       <span className="font-medium text-green-600">
-                                        Deal: {item.dealPrice.toLocaleString()} {item.currency}
+                                        Deal: {item.dealPrice.toLocaleString()}{" "}
+                                        {item.currency}
                                       </span>
                                     </>
                                   )}
@@ -457,7 +551,8 @@ export function CollectionFormPage() {
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center gap-0.5 text-blue-500 hover:underline"
                                       >
-                                        Deal Link <ExternalLink className="h-3 w-3" />
+                                        Deal Link{" "}
+                                        <ExternalLink className="h-3 w-3" />
                                       </a>
                                     </>
                                   )}
@@ -524,10 +619,7 @@ export function CollectionFormPage() {
                 <CardTitle>Status</CardTitle>
               </CardHeader>
               <CardContent>
-                <Select
-                  options={statusOptions}
-                  {...register('status')}
-                />
+                <Select options={statusOptions} {...register("status")} />
               </CardContent>
             </Card>
 
@@ -535,12 +627,12 @@ export function CollectionFormPage() {
               <CardContent className="pt-6">
                 <div className="flex flex-col gap-3">
                   <Button type="submit" isLoading={isSaving} className="w-full">
-                    {isEditing ? 'Update Collection' : 'Create Collection'}
+                    {isEditing ? "Update Collection" : "Create Collection"}
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => navigate('/collections')}
+                    onClick={() => navigate("/collections")}
                     className="w-full"
                   >
                     Cancel
@@ -558,12 +650,14 @@ export function CollectionFormPage() {
                   <dl className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <dt className="text-slate-500">Products</dt>
-                      <dd className="font-medium text-slate-900">{collectionItems.length}</dd>
+                      <dd className="font-medium text-slate-900">
+                        {collectionItems.length}
+                      </dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-slate-500">Category</dt>
                       <dd className="font-medium text-slate-900">
-                        {collection?.category?.nameTh || '—'}
+                        {collection?.category?.nameTh || "—"}
                       </dd>
                     </div>
                   </dl>
@@ -582,5 +676,5 @@ export function CollectionFormPage() {
         message="Are you sure you want to remove this product from the collection?"
       />
     </div>
-  )
+  );
 }

@@ -367,6 +367,27 @@ export function useProductForm(id?: string) {
             }))
           : [],
         status: "draft", // Always set to draft when importing
+        keyHighlights: Array.isArray(parsed.keyHighlights)
+          ? parsed.keyHighlights
+          : [""],
+        weaknesses: Array.isArray(parsed.weaknesses)
+          ? parsed.weaknesses
+          : [""],
+        beforePurchasePoints: Array.isArray(parsed.beforePurchasePoints)
+          ? parsed.beforePurchasePoints
+          : [""],
+        afterUsagePoints: Array.isArray(parsed.afterUsagePoints)
+          ? parsed.afterUsagePoints
+          : [""],
+        quickVerdictQuote: parsed.quickVerdictQuote || "",
+        quickVerdictDescription: parsed.quickVerdictDescription || "",
+        quickVerdictTags: Array.isArray(parsed.quickVerdictTags)
+          ? parsed.quickVerdictTags
+          : [""],
+        pricingPrice: typeof parsed.pricingPrice === "number" ? parsed.pricingPrice : undefined,
+        pricingCurrency: parsed.pricingCurrency || "THB",
+        pricingLabel: parsed.pricingLabel || "",
+        ratings: Array.isArray(parsed.ratings) ? parsed.ratings : [],
       };
 
       setFormData(importedData);

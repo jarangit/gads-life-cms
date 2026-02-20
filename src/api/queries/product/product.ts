@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { qk } from "../key";
 import { http } from "../../http";
 import type { ProductItemResponse } from "../../types/product";
-import type { ApiResponse } from "@/api/types/api";
+// import type { ApiResponse } from "@/api/types/api";
 
 export interface ProductListResponse {
   items: ProductItemResponse[];
@@ -27,10 +27,9 @@ export function useProducts(params: ProductListParams = {}) {
   return useQuery({
     queryKey: qk.products(queryParams),
     queryFn: () =>
-      http<ApiResponse<ProductListResponse>>("/admin/products", {
+      http<ProductListResponse>("/admin/products", {
         params: queryParams,
       }),
-    select: (response) => response,
-    enabled,
+   
   });
 }

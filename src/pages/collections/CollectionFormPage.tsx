@@ -236,7 +236,7 @@ export function CollectionFormPage() {
   };
 
   // Products available to add (exclude already added ones)
-  const productsList = productsData?.data?.items ?? [];
+  const productsList = productsData?.items ?? [];
   const addedProductIds = new Set(
     collectionItems.map((item) => item.productId),
   );

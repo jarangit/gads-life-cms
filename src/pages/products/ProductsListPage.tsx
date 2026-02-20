@@ -11,6 +11,8 @@ import {
   FileText,
   CheckCircle,
   ThumbsUp,
+  SlidersHorizontal,
+  X,
 } from "lucide-react";
 import {
   Button,
@@ -39,20 +41,29 @@ import {
 import type { ContentStatus } from "@/types";
 import { useProducts } from "@/api/queries/product/product";
 import { useDeleteProduct } from "@/api/queries/product/mutation";
+import { useCategories } from "@/api/queries/category/list";
+import { useBrands } from "@/api/queries/brands/list";
 import type { ProductItemResponse } from "@/api/types/product";
 
 export function ProductsListPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ContentStatus | "">("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [brandFilter, setBrandFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const deleteModal = useDeleteModal();
   const deleteProduct = useDeleteProduct();
 
   const itemsPerPage = 10;
 
+  const { data: categoriesData } = useCategories();
+  const brandsData = useBrands();
+
   const { data, isLoading } = useProducts({
     search,
     status: statusFilter || undefined,
+    categoryId: categoryFilter || undefined,
+    brandId: brandFilter || undefined,
     page: currentPage,
   });
 
@@ -134,6 +145,35 @@ export function ProductsListPage() {
     { value: "archived", label: "Archived" },
   ];
 
+  const categoryOptions = [
+    { value: "", label: "All Categories" },
+    ...(categoriesData?.items ?? []).map((c) => ({
+      value: c.id,
+      label: c.nameEn || c.nameTh || c.slug,
+    })),
+  ];
+
+  const brandOptions = [
+    { value: "", label: "All Brands" },
+    ...(brandsData.data ?? []).map((b) => ({
+      value: b.id,
+      label: b.name,
+    })),
+  ];
+
+  const hasActiveFilters = !!(categoryFilter || brandFilter || statusFilter);
+
+  const handleClearFilters = () => {
+    setCategoryFilter("");
+    setBrandFilter("");
+    setStatusFilter("");
+    setCurrentPage(1);
+  };
+
+  const activeFilterCount = [categoryFilter, brandFilter, statusFilter].filter(
+    Boolean,
+  ).length;
+
   const formatPrice = (product: ProductItemResponse) => {
     if (!product.price) return "—";
     return (
@@ -168,23 +208,67 @@ export function ProductsListPage() {
       <StatsSummary stats={stats} className="mb-6 grid-cols-2 lg:grid-cols-4" />
 
       <Card>
-        <div className="border-b border-slate-200 p-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <SearchInput
-              placeholder="Search products or categories..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onClear={() => setSearch("")}
-              className="w-full sm:w-72"
-            />
-            <Select
-              options={statusOptions}
-              value={statusFilter}
-              onChange={(e) =>
-                setStatusFilter(e.target.value as ContentStatus | "")
-              }
-              className="w-full sm:w-40"
-            />
+        <div className="border-b border-slate-200 p-4 space-y-3">
+          {/* Search */}
+          <SearchInput
+            placeholder="Search products..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+            onClear={() => {
+              setSearch("");
+              setCurrentPage(1);
+            }}
+            className="w-full"
+          />
+
+          {/* Filter row */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-slate-400">
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                <span>
+                  Filters{activeFilterCount > 0 && ` (${activeFilterCount})`}
+                </span>
+              </div>
+              {hasActiveFilters && (
+                <button
+                  onClick={handleClearFilters}
+                  className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                >
+                  <X className="h-3 w-3" />
+                  Clear all
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <Select
+                options={categoryOptions}
+                value={categoryFilter}
+                onChange={(e) => {
+                  setCategoryFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+              <Select
+                options={brandOptions}
+                value={brandFilter}
+                onChange={(e) => {
+                  setBrandFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+              <Select
+                options={statusOptions}
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value as ContentStatus | "");
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
           </div>
         </div>
 
@@ -197,13 +281,15 @@ export function ProductsListPage() {
             icon={<Package className="h-6 w-6" />}
             title="No products found"
             description={
-              search || statusFilter
+              search || statusFilter || categoryFilter || brandFilter
                 ? "Try adjusting your filters"
                 : "Get started by adding your first product"
             }
             action={
               !search &&
-              !statusFilter && (
+              !statusFilter &&
+              !categoryFilter &&
+              !brandFilter && (
                 <Button
                   as={Link}
                   to="/products/new"

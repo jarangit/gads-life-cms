@@ -32,12 +32,12 @@ export function BasicInfoTab({
   onPriceChange,
   onRatingChange,
 }: BasicInfoTabProps) {
-  const { data: categories = [] } = useCategories();
-  const { data: brands = [] } = useBrands();
+  const { data: categories } = useCategories();
+  const { data: brands } = useBrands();
 
   const brandOptions = [
     { value: "", label: "Select a brand" },
-    ...brands.map((b) => ({ value: b.id, label: b.name })),
+    ...(brands?.map((b) => ({ value: b.id, label: b.name })) || []),
   ];
 
   return (

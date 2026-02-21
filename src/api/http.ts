@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API || "http://localhost:3001/api/v1";
+const API_BASE = import.meta.env.VITE_API;
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export async function http<T>(

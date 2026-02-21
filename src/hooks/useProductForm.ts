@@ -26,6 +26,10 @@ const initialFormData: ProductFormData = {
   galleryImages: [],
   affiliateLinks: [],
   status: "draft",
+  isRecommended: false,
+  currency: "THB",
+  priceLabel: "",
+  lastUpdated: new Date().toISOString().split("T")[0],
   // New product detail fields
   keyHighlights: [""],
   weaknesses: [""],
@@ -38,6 +42,8 @@ const initialFormData: ProductFormData = {
   pricingCurrency: "THB",
   pricingLabel: "",
   ratings: [],
+  buyIfPoints: [""],
+  skipIfPoints: [""],
 };
 
 export function useProductForm(id?: string) {
@@ -93,6 +99,12 @@ export function useProductForm(id?: string) {
             ]
           : [],
         status: (productDetail.status as "draft" | "published") || "draft",
+        isRecommended: Boolean(productDetail.isRecommended),
+        currency: productDetail.currency || "THB",
+        priceLabel: productDetail.priceLabel || "",
+        lastUpdated: productDetail.lastUpdated
+          ? String(productDetail.lastUpdated).split("T")[0]
+          : new Date().toISOString().split("T")[0],
         // New detail fields
         keyHighlights: productDetail.keyHighlights?.length
           ? productDetail.keyHighlights.map((h) => h.content)
@@ -120,11 +132,22 @@ export function useProductForm(id?: string) {
             subCategory: r.subCategory,
             score: r.score,
           })) ?? [],
+        buyIfPoints:
+          productDetail.finalVerdictPoints
+            ?.filter((point) => point.type === "BUY_IF")
+            .sort((a, b) => a.orderIndex - b.orderIndex)
+            .map((point) => point.text) ?? [""],
+        skipIfPoints:
+          productDetail.finalVerdictPoints
+            ?.filter((point) => point.type === "SKIP_IF")
+            .sort((a, b) => a.orderIndex - b.orderIndex)
+            .map((point) => point.text) ?? [""],
       });
 
       // Store original payload values for editable fields (for partial update comparison)
       originalPayloadRef.current = {
         name: productDetail.name || "",
+        slug: productDetail.slug || "",
         subtitle: productDetail.subtitle || productDetail.name || "",
         categoryId: productDetail.categoryId || null,
         brandId: productDetail.brandId || null,
@@ -141,11 +164,15 @@ export function useProductForm(id?: string) {
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >,
   ) => {
-    const { name, value } = e.target;
+    const { name } = e.target;
+    const value =
+      e.target instanceof HTMLInputElement && e.target.type === "checkbox"
+        ? e.target.checked
+        : e.target.value;
     setFormData((prev) => {
       const newData = { ...prev, [name]: value };
       if (name === "name" && !isEditing) {
-        newData.slug = generateSlug(value);
+        newData.slug = generateSlug(String(value));
       }
       return newData;
     });
@@ -289,6 +316,8 @@ export function useProductForm(id?: string) {
   const beforePurchaseHandlers = makeListHandlers("beforePurchasePoints");
   const afterUsageHandlers = makeListHandlers("afterUsagePoints");
   const verdictTagsHandlers = makeListHandlers("quickVerdictTags");
+  const buyIfHandlers = makeListHandlers("buyIfPoints");
+  const skipIfHandlers = makeListHandlers("skipIfPoints");
 
   // Ratings handlers
   const handleRatingItemChange = (
@@ -336,8 +365,10 @@ export function useProductForm(id?: string) {
         brandId: parsed.brandId || "",
         categoryIds: Array.isArray(parsed.categoryIds)
           ? parsed.categoryIds
-          : [],
-        shortDescription: parsed.shortDescription || "",
+          : parsed.categoryId
+            ? [parsed.categoryId]
+            : [],
+        shortDescription: parsed.subtitle || parsed.shortDescription || "",
         sections: Array.isArray(parsed.sections) ? parsed.sections : [],
         pros: normalizeStringList(parsed.pros),
         cons: normalizeStringList(parsed.cons),
@@ -345,9 +376,14 @@ export function useProductForm(id?: string) {
           Array.isArray(parsed.specs) && parsed.specs.length > 0
             ? parsed.specs
             : [{ key: "", value: "" }],
-        rating: typeof parsed.rating === "number" ? parsed.rating : undefined,
+        rating:
+          typeof parsed.overallScore === "number"
+            ? parsed.overallScore
+            : typeof parsed.rating === "number"
+              ? parsed.rating
+              : undefined,
         price: typeof parsed.price === "number" ? parsed.price : undefined,
-        heroImage: parsed.heroImage || "",
+        heroImage: parsed.image || parsed.heroImage || "",
         galleryImages: Array.isArray(parsed.galleryImages)
           ? parsed.galleryImages
           : [],
@@ -359,22 +395,49 @@ export function useProductForm(id?: string) {
               price: link.price,
               note: link.note || "",
             }))
+          : parsed.affiliateLink
+            ? [
+                {
+                  id: generateId(),
+                  merchant: "",
+                  url: parsed.affiliateLink,
+                  price: undefined,
+                  note: "",
+                },
+              ]
           : [],
-        status: "draft", // Always set to draft when importing
+        status:
+          parsed.status === "published" || parsed.status === "draft"
+            ? parsed.status
+            : "draft",
+        isRecommended: Boolean(parsed.isRecommended),
+        currency: parsed.currency || "THB",
+        priceLabel: parsed.priceLabel || "",
+        lastUpdated:
+          typeof parsed.lastUpdated === "string" && parsed.lastUpdated
+            ? parsed.lastUpdated
+            : new Date().toISOString().split("T")[0],
         keyHighlights: normalizeStringList(parsed.keyHighlights),
         weaknesses: normalizeStringList(parsed.weaknesses),
         beforePurchasePoints: normalizeStringList(parsed.beforePurchasePoints),
         afterUsagePoints: normalizeStringList(parsed.afterUsagePoints),
-        quickVerdictQuote: parsed.quickVerdictQuote || "",
-        quickVerdictDescription: parsed.quickVerdictDescription || "",
+        quickVerdictQuote:
+          parsed.quickVerdict?.quote || parsed.quickVerdictQuote || "",
+        quickVerdictDescription:
+          parsed.quickVerdict?.description || parsed.quickVerdictDescription || "",
         quickVerdictTags: normalizeTagList(parsed.quickVerdictTags),
         pricingPrice:
+          typeof parsed.pricing?.price === "number"
+            ? parsed.pricing.price
+            :
           typeof parsed.pricingPrice === "number"
             ? parsed.pricingPrice
             : undefined,
-        pricingCurrency: parsed.pricingCurrency || "THB",
-        pricingLabel: parsed.pricingLabel || "",
-        ratings: Array.isArray(parsed.ratings) ? parsed.ratings : [],
+        pricingCurrency: parsed.pricing?.currency || parsed.pricingCurrency || "THB",
+        pricingLabel: parsed.pricing?.priceLabel || parsed.pricingLabel || "",
+        ratings: normalizeRatings(parsed.ratings),
+        buyIfPoints: extractFinalVerdictByType(parsed.finalVerdictPoints, "BUY_IF"),
+        skipIfPoints: extractFinalVerdictByType(parsed.finalVerdictPoints, "SKIP_IF"),
       };
 
       setFormData(importedData);
@@ -390,8 +453,6 @@ export function useProductForm(id?: string) {
 
     if (!formData.name.trim()) newErrors.name = "Name is required";
     if (!formData.slug.trim()) newErrors.slug = "Slug is required";
-    if (!formData.brandId) newErrors.brandId = "Brand is required";
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -404,6 +465,7 @@ export function useProductForm(id?: string) {
 
     console.log("🚀 ~ buildPayload ~ formData:", formData);
     return {
+      slug: formData.slug,
       name: formData.name,
       subtitle: formData.shortDescription || formData.name,
       categoryId:
@@ -411,38 +473,40 @@ export function useProductForm(id?: string) {
       brandId: formData.brandId || null,
       image: formData.heroImage || null,
       overallScore: formData.rating ?? 0,
-      isRecommended: false,
+      isRecommended: formData.isRecommended,
       price: formData.price ?? 0,
-      currency: "THB",
-      priceLabel: formData.price ? `฿${formData.price.toLocaleString()}` : "฿0",
+      currency: formData.currency || "THB",
+      priceLabel:
+        formData.priceLabel ||
+        (formData.price ? `฿${formData.price.toLocaleString()}` : "฿0"),
       affiliateLink:
         formData.affiliateLinks.length > 0
           ? formData.affiliateLinks[0].url
           : null,
-      lastUpdated: new Date().toISOString().split("T")[0],
+      lastUpdated: formData.lastUpdated || new Date().toISOString().split("T")[0],
       ratings: formData.ratings.filter((r) => r.subCategory.trim()),
       status: statusOverride || (formData.status as "draft" | "published"),
-      keyHighlights: formData.keyHighlights.map((c, i) => ({
+      keyHighlights: formData.keyHighlights.filter((c) => c.trim()).map((c, i) => ({
         content: c,
         sortOrder: i + 1,
       })),
-      weaknesses: formData.weaknesses.map((c, i) => ({
+      weaknesses: formData.weaknesses.filter((c) => c.trim()).map((c, i) => ({
         content: c,
         sortOrder: i + 1,
       })),
-      beforePurchasePoints: formData.beforePurchasePoints.map((c, i) => ({
+      beforePurchasePoints: formData.beforePurchasePoints.filter((c) => c.trim()).map((c, i) => ({
         content: c,
         sortOrder: i + 1,
       })),
-      afterUsagePoints: formData.afterUsagePoints.map((c, i) => ({
+      afterUsagePoints: formData.afterUsagePoints.filter((c) => c.trim()).map((c, i) => ({
         content: c,
         sortOrder: i + 1,
       })),
-      pros: formData.pros.map((c, i) => ({
+      pros: formData.pros.filter((c) => c.trim()).map((c, i) => ({
         content: c,
         sortOrder: i + 1,
       })),
-      cons: formData.cons.map((c, i) => ({
+      cons: formData.cons.filter((c) => c.trim()).map((c, i) => ({
         content: c,
         sortOrder: i + 1,
       })),
@@ -452,7 +516,7 @@ export function useProductForm(id?: string) {
             description: formData.quickVerdictDescription,
           }
         : null,
-      quickVerdictTags: formData.quickVerdictTags.map((t, i) => ({
+      quickVerdictTags: formData.quickVerdictTags.filter((t) => t.trim()).map((t, i) => ({
         tag: t,
         sortOrder: i + 1,
       })),
@@ -464,6 +528,18 @@ export function useProductForm(id?: string) {
               priceLabel: formData.pricingLabel,
             }
           : null,
+      finalVerdictPoints: [
+        ...formData.buyIfPoints.filter((text) => text.trim()).map((text, index) => ({
+          type: "BUY_IF" as const,
+          text,
+          orderIndex: index + 1,
+        })),
+        ...formData.skipIfPoints.filter((text) => text.trim()).map((text, index) => ({
+          type: "SKIP_IF" as const,
+          text,
+          orderIndex: index + 1,
+        })),
+      ],
     };
   };
 
@@ -473,6 +549,7 @@ export function useProductForm(id?: string) {
   ): Partial<CreateProductPayload> => {
     const currentPayload: Record<string, unknown> = {
       name: formData.name,
+      slug: formData.slug,
       subtitle: formData.shortDescription || formData.name,
       categoryId:
         formData.categoryIds.length > 0 ? formData.categoryIds[0] : null,
@@ -595,6 +672,8 @@ export function useProductForm(id?: string) {
     beforePurchaseHandlers,
     afterUsageHandlers,
     verdictTagsHandlers,
+    buyIfHandlers,
+    skipIfHandlers,
 
     // Ratings
     handleRatingItemChange,
@@ -638,6 +717,42 @@ const normalizeTagList = (input: unknown): string[] => {
       return "";
     })
     .filter((v) => typeof v === "string");
+
+  return list.length > 0 ? list : [""];
+};
+
+const normalizeRatings = (input: unknown): { subCategory: string; score: number }[] => {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const subCategory =
+        "subCategory" in item && typeof item.subCategory === "string"
+          ? item.subCategory
+          : "";
+      const scoreRaw = "score" in item ? Number(item.score) : NaN;
+      const score = Number.isFinite(scoreRaw) ? scoreRaw : 0;
+      if (!subCategory.trim()) return null;
+      return { subCategory, score };
+    })
+    .filter((item): item is { subCategory: string; score: number } => item !== null);
+};
+
+const extractFinalVerdictByType = (
+  input: unknown,
+  type: "BUY_IF" | "SKIP_IF",
+): string[] => {
+  if (!Array.isArray(input)) return [""];
+
+  const list = input
+    .filter(
+      (item): item is { type?: unknown; text?: unknown; orderIndex?: unknown } =>
+        Boolean(item) && typeof item === "object",
+    )
+    .filter((item) => item.type === type)
+    .sort((a, b) => Number(a.orderIndex ?? 0) - Number(b.orderIndex ?? 0))
+    .map((item) => (typeof item.text === "string" ? item.text : ""))
+    .filter((text) => text.trim());
 
   return list.length > 0 ? list : [""];
 };

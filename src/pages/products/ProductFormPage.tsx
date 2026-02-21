@@ -76,6 +76,8 @@ export function ProductFormPage() {
     beforePurchaseHandlers,
     afterUsageHandlers,
     verdictTagsHandlers,
+    buyIfHandlers,
+    skipIfHandlers,
     handleRatingItemChange,
     addRating,
     removeRating,
@@ -171,6 +173,8 @@ export function ProductFormPage() {
                   beforePurchaseHandlers={beforePurchaseHandlers}
                   afterUsageHandlers={afterUsageHandlers}
                   verdictTagsHandlers={verdictTagsHandlers}
+                  buyIfHandlers={buyIfHandlers}
+                  skipIfHandlers={skipIfHandlers}
                   handleRatingItemChange={handleRatingItemChange}
                   addRating={addRating}
                   removeRating={removeRating}

@@ -28,6 +28,7 @@ export interface ProductItemResponse {
   quickVerdict: QuickVerdict | null;
   quickVerdictTags: QuickVerdictTag[];
   pricing: ProductPricing | null;
+  finalVerdictPoints: FinalVerdictPoint[];
 }
 
 export interface Brand {
@@ -91,4 +92,12 @@ export interface ProductPricing {
   priceLabel: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface FinalVerdictPoint {
+  id: number;
+  productId: string;
+  type: "BUY_IF" | "SKIP_IF";
+  text: string;
+  orderIndex: number;
 }

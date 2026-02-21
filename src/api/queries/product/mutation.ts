@@ -6,6 +6,7 @@ const endpoint = "/admin/products";
 export interface CreateProductPayload {
   categoryId?: string | null;
   brandId?: string | null;
+  slug?: string;
   name: string;
   subtitle: string;
   image?: string | null;
@@ -27,6 +28,11 @@ export interface CreateProductPayload {
   quickVerdict?: { quote: string; description: string } | null;
   quickVerdictTags?: { tag: string; sortOrder?: number }[];
   pricing?: { price: number; currency?: string; priceLabel: string } | null;
+  finalVerdictPoints?: {
+    type: "BUY_IF" | "SKIP_IF";
+    text: string;
+    orderIndex?: number;
+  }[];
 }
 
 export function useCreateProduct() {

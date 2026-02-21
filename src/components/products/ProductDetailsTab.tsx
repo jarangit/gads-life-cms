@@ -154,12 +154,16 @@ interface ProductDetailsTabProps {
     pricingCurrency: string
     pricingLabel: string
     ratings: { subCategory: string; score: number }[]
+    buyIfPoints: string[]
+    skipIfPoints: string[]
   }
   keyHighlightsHandlers: ListHandlers
   weaknessesHandlers: ListHandlers
   beforePurchaseHandlers: ListHandlers
   afterUsageHandlers: ListHandlers
   verdictTagsHandlers: ListHandlers
+  buyIfHandlers: ListHandlers
+  skipIfHandlers: ListHandlers
   handleRatingItemChange: (index: number, field: 'subCategory' | 'score', value: string | number) => void
   addRating: () => void
   removeRating: (index: number) => void
@@ -173,6 +177,8 @@ export function ProductDetailsTab({
   beforePurchaseHandlers,
   afterUsageHandlers,
   verdictTagsHandlers,
+  buyIfHandlers,
+  skipIfHandlers,
   handleRatingItemChange,
   addRating,
   removeRating,
@@ -322,6 +328,28 @@ export function ProductDetailsTab({
           </div>
         </CardContent>
       </Card>
+
+      {/* Final Verdict Points */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <StringListEditor
+          title="BUY IF"
+          titleColor="text-emerald-600"
+          items={formData.buyIfPoints}
+          placeholder="e.g. ต้องการใช้งานทุกวันแบบลื่น ๆ"
+          onChange={buyIfHandlers.handleChange}
+          onAdd={buyIfHandlers.add}
+          onRemove={buyIfHandlers.remove}
+        />
+        <StringListEditor
+          title="SKIP IF"
+          titleColor="text-rose-600"
+          items={formData.skipIfPoints}
+          placeholder="e.g. ต้องการเล่นเกม AAA"
+          onChange={skipIfHandlers.handleChange}
+          onAdd={skipIfHandlers.add}
+          onRemove={skipIfHandlers.remove}
+        />
+      </div>
     </div>
   )
 }

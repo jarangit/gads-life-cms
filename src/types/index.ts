@@ -106,6 +106,10 @@ export interface ProductFormData {
   galleryImages: string[]
   affiliateLinks: AffiliateLink[]
   status: ContentStatus
+  isRecommended: boolean
+  currency: string
+  priceLabel: string
+  lastUpdated: string
   // ─── New product detail fields ───
   keyHighlights: string[]
   weaknesses: string[]
@@ -118,6 +122,8 @@ export interface ProductFormData {
   pricingCurrency: string
   pricingLabel: string
   ratings: { subCategory: string; score: number }[]
+  buyIfPoints: string[]
+  skipIfPoints: string[]
 }
 
 // Collection

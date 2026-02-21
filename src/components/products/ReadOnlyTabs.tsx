@@ -61,6 +61,8 @@ interface ReadOnlyProductDetailsProps {
     pricingCurrency: string;
     pricingLabel: string;
     ratings: { subCategory: string; score: number }[];
+    buyIfPoints: string[];
+    skipIfPoints: string[];
   };
 }
 
@@ -182,6 +184,19 @@ export function ReadOnlyProductDetails({ formData }: ReadOnlyProductDetailsProps
           </div>
         </CardContent>
       </Card>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <ReadOnlyList
+          title="BUY IF"
+          titleColor="text-emerald-600"
+          items={formData.buyIfPoints}
+        />
+        <ReadOnlyList
+          title="SKIP IF"
+          titleColor="text-rose-600"
+          items={formData.skipIfPoints}
+        />
+      </div>
     </div>
   );
 }

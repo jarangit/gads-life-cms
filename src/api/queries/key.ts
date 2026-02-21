@@ -12,4 +12,11 @@ export const qk = {
 
   collectionItems: (collectionId: string) =>
     ["collection-items", collectionId] as const,
+
+  reportsOverview: (params?: Record<string, string | number | boolean>) =>
+    ["reports-overview", params ?? {}] as const,
+  reportsTopProducts: (params?: Record<string, string | number | boolean>) =>
+    ["reports-top-products", params ?? {}] as const,
+  reportsTopPages: (params?: Record<string, string | number | boolean>) =>
+    ["reports-top-pages", params ?? {}] as const,
 };

@@ -2,6 +2,7 @@ import {
   Input,
   Textarea,
   Select,
+  Checkbox,
   Card,
   CardHeader,
   CardTitle,
@@ -137,6 +138,37 @@ export function BasicInfoTab({
             placeholder="e.g., 4.5"
           />
         </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Input
+            label="Currency"
+            name="currency"
+            value={formData.currency}
+            onChange={onChange}
+            placeholder="THB"
+          />
+          <Input
+            label="Price Label"
+            name="priceLabel"
+            value={formData.priceLabel}
+            onChange={onChange}
+            placeholder="ราคาเริ่มต้น"
+          />
+          <Input
+            label="Last Updated"
+            name="lastUpdated"
+            type="date"
+            value={formData.lastUpdated}
+            onChange={onChange}
+          />
+        </div>
+
+        <Checkbox
+          name="isRecommended"
+          checked={formData.isRecommended}
+          onChange={onChange}
+          label="Recommended Product"
+        />
       </CardContent>
     </Card>
   );

@@ -13,6 +13,7 @@ export interface ProductListParams {
   status?: string;
   search?: string;
   page?: number;
+  limit?: number;
   categoryId?: string;
   brandId?: string;
   enabled?: boolean;

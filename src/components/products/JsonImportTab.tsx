@@ -19,28 +19,48 @@ interface JsonImportTabProps {
 
 const JSON_TEMPLATE = JSON.stringify(
   {
-    name: "Product Name",
-    slug: "product-slug",
-    brandId: "brand-id",
-    categoryIds: ["category-id-1"],
-    shortDescription: "Brief product description",
-    pros: ["Pro 1", "Pro 2"],
-    cons: ["Con 1", "Con 2"],
-    specs: [
-      { key: "Processor", value: "M3 chip" },
-      { key: "RAM", value: "8GB" },
+    name: "MacBook Air M3 form",
+    subtitle: '15\" • 2024 • Space Gray',
+    slug: "macbook-air-m3-15",
+    categoryId: null,
+    brandId: null,
+    image: "https://example.com/macbook-air-m3.jpg",
+    overallScore: 4.5,
+    isRecommended: true,
+    price: 44900,
+    currency: "THB",
+    priceLabel: "ราคาเริ่มต้น",
+    affiliateLink: "https://affiliate.example.com/macbook",
+    lastUpdated: "2026-02-16",
+    status: "draft",
+    ratings: [
+      { subCategory: "Performance", score: 5 },
+      { subCategory: "Battery", score: 5 },
+      { subCategory: "Display", score: 4 },
+      { subCategory: "Value", score: 4 },
     ],
-    rating: 4.5,
-    price: 999,
-    heroImage: "https://example.com/image.jpg",
-    galleryImages: [],
-    affiliateLinks: [
-      {
-        merchant: "Amazon",
-        url: "https://amazon.com/...",
-        price: 999,
-        note: "Best price",
-      },
+    keyHighlights: [
+      { content: "M3 Chip แรงขึ้น 60% จาก M1", sortOrder: 1 },
+      { content: "แบตอึด 18 ชั่วโมง", sortOrder: 2 },
+    ],
+    weaknesses: [{ content: "Port แค่ 2 ช่อง USB-C", sortOrder: 1 }],
+    beforePurchasePoints: [{ content: "กลัวว่าจะร้อนเกินไป", sortOrder: 1 }],
+    afterUsagePoints: [{ content: "ไม่ร้อนเลย ใช้งานทั้งวันได้", sortOrder: 1 }],
+    pros: [{ content: "แบตเตอรี่อึดมาก", sortOrder: 1 }],
+    cons: [{ content: "ไม่เหมาะกับ Gaming", sortOrder: 1 }],
+    quickVerdict: {
+      quote: "แล็ปท็อปที่ดีที่สุดสำหรับคนทั่วไป",
+      description: "MacBook Air M3 คือเครื่องที่เราแนะนำให้กับทุกคน",
+    },
+    quickVerdictTags: [{ tag: "Everyday Use", sortOrder: 1 }],
+    pricing: {
+      price: 44900,
+      currency: "THB",
+      priceLabel: "ราคาเริ่มต้น",
+    },
+    finalVerdictPoints: [
+      { type: "BUY_IF", text: "ต้องการแล็ปท็อปที่ใช้งานได้ทุกวัน", orderIndex: 1 },
+      { type: "SKIP_IF", text: "ต้องการเล่นเกม AAA", orderIndex: 1 },
     ],
   },
   null,
@@ -117,53 +137,40 @@ export function JsonImportTab({
               Required. Product name
             </li>
             <li>
+              <code className="rounded bg-slate-200 px-1">subtitle</code> -
+              Short subtitle shown under title
+            </li>
+            <li>
               <code className="rounded bg-slate-200 px-1">slug</code> - URL slug
               (auto-generated if empty)
             </li>
             <li>
-              <code className="rounded bg-slate-200 px-1">brandId</code> - Brand
-              ID
-            </li>
-            <li>
+              <code className="rounded bg-slate-200 px-1">categoryId</code> /{" "}
               <code className="rounded bg-slate-200 px-1">categoryIds</code> -
-              Array of category IDs
+              category id (single/array)
             </li>
             <li>
-              <code className="rounded bg-slate-200 px-1">
-                shortDescription
-              </code>{" "}
-              - Brief description
-            </li>
-            <li>
-              <code className="rounded bg-slate-200 px-1">pros</code> - Array of
-              strings
-            </li>
-            <li>
-              <code className="rounded bg-slate-200 px-1">cons</code> - Array of
-              strings
-            </li>
-            <li>
-              <code className="rounded bg-slate-200 px-1">specs</code> - Array
-              of {"{key, value}"} objects
-            </li>
-            <li>
-              <code className="rounded bg-slate-200 px-1">rating</code> - Number
-              (0-5)
-            </li>
-            <li>
-              <code className="rounded bg-slate-200 px-1">price</code> - Number
-            </li>
-            <li>
+              <code className="rounded bg-slate-200 px-1">image</code> /{" "}
               <code className="rounded bg-slate-200 px-1">heroImage</code> -
-              Image URL
+              Product image URL
             </li>
             <li>
-              <code className="rounded bg-slate-200 px-1">galleryImages</code> -
-              Array of image URLs
+              <code className="rounded bg-slate-200 px-1">overallScore</code> /{" "}
+              <code className="rounded bg-slate-200 px-1">rating</code> - score 0-5
             </li>
             <li>
-              <code className="rounded bg-slate-200 px-1">affiliateLinks</code>{" "}
-              - Array of {"{merchant, url, price, note}"}
+              <code className="rounded bg-slate-200 px-1">affiliateLink</code> /{" "}
+              <code className="rounded bg-slate-200 px-1">affiliateLinks</code> -
+              affiliate source
+            </li>
+            <li>
+              <code className="rounded bg-slate-200 px-1">quickVerdict</code>,{" "}
+              <code className="rounded bg-slate-200 px-1">quickVerdictTags</code>,{" "}
+              <code className="rounded bg-slate-200 px-1">pricing</code> - nested objects
+            </li>
+            <li>
+              <code className="rounded bg-slate-200 px-1">finalVerdictPoints</code> -
+              array of {"{type: BUY_IF|SKIP_IF, text, orderIndex}"}
             </li>
           </ul>
         </div>

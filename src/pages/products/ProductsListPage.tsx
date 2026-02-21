@@ -6,7 +6,6 @@ import {
   Trash2,
   Package,
   Eye,
-  Archive,
   Send,
   FileText,
   CheckCircle,

@@ -339,14 +339,8 @@ export function useProductForm(id?: string) {
           : [],
         shortDescription: parsed.shortDescription || "",
         sections: Array.isArray(parsed.sections) ? parsed.sections : [],
-        pros:
-          Array.isArray(parsed.pros) && parsed.pros.length > 0
-            ? parsed.pros
-            : [""],
-        cons:
-          Array.isArray(parsed.cons) && parsed.cons.length > 0
-            ? parsed.cons
-            : [""],
+        pros: normalizeStringList(parsed.pros),
+        cons: normalizeStringList(parsed.cons),
         specs:
           Array.isArray(parsed.specs) && parsed.specs.length > 0
             ? parsed.specs
@@ -367,24 +361,17 @@ export function useProductForm(id?: string) {
             }))
           : [],
         status: "draft", // Always set to draft when importing
-        keyHighlights: Array.isArray(parsed.keyHighlights)
-          ? parsed.keyHighlights
-          : [""],
-        weaknesses: Array.isArray(parsed.weaknesses)
-          ? parsed.weaknesses
-          : [""],
-        beforePurchasePoints: Array.isArray(parsed.beforePurchasePoints)
-          ? parsed.beforePurchasePoints
-          : [""],
-        afterUsagePoints: Array.isArray(parsed.afterUsagePoints)
-          ? parsed.afterUsagePoints
-          : [""],
+        keyHighlights: normalizeStringList(parsed.keyHighlights),
+        weaknesses: normalizeStringList(parsed.weaknesses),
+        beforePurchasePoints: normalizeStringList(parsed.beforePurchasePoints),
+        afterUsagePoints: normalizeStringList(parsed.afterUsagePoints),
         quickVerdictQuote: parsed.quickVerdictQuote || "",
         quickVerdictDescription: parsed.quickVerdictDescription || "",
-        quickVerdictTags: Array.isArray(parsed.quickVerdictTags)
-          ? parsed.quickVerdictTags
-          : [""],
-        pricingPrice: typeof parsed.pricingPrice === "number" ? parsed.pricingPrice : undefined,
+        quickVerdictTags: normalizeTagList(parsed.quickVerdictTags),
+        pricingPrice:
+          typeof parsed.pricingPrice === "number"
+            ? parsed.pricingPrice
+            : undefined,
         pricingCurrency: parsed.pricingCurrency || "THB",
         pricingLabel: parsed.pricingLabel || "",
         ratings: Array.isArray(parsed.ratings) ? parsed.ratings : [],
@@ -413,8 +400,9 @@ export function useProductForm(id?: string) {
   const buildPayload = (
     statusOverride?: "draft" | "published",
   ): CreateProductPayload => {
-    const filterNonEmpty = (arr: string[]) => arr.filter((s) => s.trim());
+    // const filterNonEmpty = (arr: string[]) => arr.filter((s) => s.trim());
 
+    console.log("🚀 ~ buildPayload ~ formData:", formData);
     return {
       name: formData.name,
       subtitle: formData.shortDescription || formData.name,
@@ -434,25 +422,27 @@ export function useProductForm(id?: string) {
       lastUpdated: new Date().toISOString().split("T")[0],
       ratings: formData.ratings.filter((r) => r.subCategory.trim()),
       status: statusOverride || (formData.status as "draft" | "published"),
-      keyHighlights: filterNonEmpty(formData.keyHighlights).map((c, i) => ({
+      keyHighlights: formData.keyHighlights.map((c, i) => ({
         content: c,
         sortOrder: i + 1,
       })),
-      weaknesses: filterNonEmpty(formData.weaknesses).map((c, i) => ({
+      weaknesses: formData.weaknesses.map((c, i) => ({
         content: c,
         sortOrder: i + 1,
       })),
-      beforePurchasePoints: filterNonEmpty(formData.beforePurchasePoints).map(
-        (c, i) => ({ content: c, sortOrder: i + 1 }),
-      ),
-      afterUsagePoints: filterNonEmpty(formData.afterUsagePoints).map(
-        (c, i) => ({ content: c, sortOrder: i + 1 }),
-      ),
-      pros: filterNonEmpty(formData.pros).map((c, i) => ({
+      beforePurchasePoints: formData.beforePurchasePoints.map((c, i) => ({
         content: c,
         sortOrder: i + 1,
       })),
-      cons: filterNonEmpty(formData.cons).map((c, i) => ({
+      afterUsagePoints: formData.afterUsagePoints.map((c, i) => ({
+        content: c,
+        sortOrder: i + 1,
+      })),
+      pros: formData.pros.map((c, i) => ({
+        content: c,
+        sortOrder: i + 1,
+      })),
+      cons: formData.cons.map((c, i) => ({
         content: c,
         sortOrder: i + 1,
       })),
@@ -462,9 +452,10 @@ export function useProductForm(id?: string) {
             description: formData.quickVerdictDescription,
           }
         : null,
-      quickVerdictTags: filterNonEmpty(formData.quickVerdictTags).map(
-        (t, i) => ({ tag: t, sortOrder: i + 1 }),
-      ),
+      quickVerdictTags: formData.quickVerdictTags.map((t, i) => ({
+        tag: t,
+        sortOrder: i + 1,
+      })),
       pricing:
         formData.pricingPrice != null
           ? {
@@ -617,3 +608,36 @@ export function useProductForm(id?: string) {
     navigate,
   };
 }
+
+// Helper functions
+const normalizeStringList = (input: unknown): string[] => {
+  if (!Array.isArray(input)) return [""];
+  const list = input
+    .map((item) => {
+      if (typeof item === "string") return item;
+      if (item && typeof item === "object" && "content" in item) {
+        const v = (item as { content?: unknown }).content;
+        return typeof v === "string" ? v : "";
+      }
+      return "";
+    })
+    .filter((v) => typeof v === "string");
+
+  return list.length > 0 ? list : [""];
+};
+
+const normalizeTagList = (input: unknown): string[] => {
+  if (!Array.isArray(input)) return [""];
+  const list = input
+    .map((item) => {
+      if (typeof item === "string") return item;
+      if (item && typeof item === "object" && "tag" in item) {
+        const v = (item as { tag?: unknown }).tag;
+        return typeof v === "string" ? v : "";
+      }
+      return "";
+    })
+    .filter((v) => typeof v === "string");
+
+  return list.length > 0 ? list : [""];
+};

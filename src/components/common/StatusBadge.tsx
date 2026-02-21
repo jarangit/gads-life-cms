@@ -11,7 +11,6 @@ const statusConfig: Record<
 > = {
   draft: { label: 'Draft', variant: 'default' },
   published: { label: 'Published', variant: 'success' },
-  archived: { label: 'Archived', variant: 'warning' },
 }
 
 export function StatusBadge({ status }: StatusBadgeProps) {

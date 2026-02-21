@@ -32,11 +32,12 @@ export interface CreateProductPayload {
 export function useCreateProduct() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: CreateProductPayload) =>
-      http(endpoint, {
+    mutationFn: async (payload: CreateProductPayload) => {
+      return http(endpoint, {
         method: "POST",
         body: payload,
-      }),
+      });
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["products"] });
     },

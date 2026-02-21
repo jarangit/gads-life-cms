@@ -142,7 +142,6 @@ export function ProductsListPage() {
     { value: "", label: "All Status" },
     { value: "draft", label: "Draft" },
     { value: "published", label: "Published" },
-    { value: "archived", label: "Archived" },
   ];
 
   const categoryOptions = [
@@ -424,16 +423,7 @@ export function ProductsListPage() {
                                 Move to Draft
                               </DropdownItem>
                             )}
-                            {product.status !== "archived" && (
-                              <DropdownItem
-                                onClick={() =>
-                                  handleStatusChange(product.id, "archived")
-                                }
-                              >
-                                <Archive className="mr-2 h-4 w-4" />
-                                Archive
-                              </DropdownItem>
-                            )}
+                            
                             <DropdownDivider />
                             <DropdownItem
                               danger

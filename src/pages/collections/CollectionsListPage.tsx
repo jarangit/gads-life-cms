@@ -36,13 +36,11 @@ const collectionTypeBadgeColors: Record<CollectionType, 'default' | 'info' | 'su
 const statusLabels: Record<CollectionStatus, string> = {
   DRAFT: 'Draft',
   PUBLISHED: 'Published',
-  ARCHIVED: 'Archived',
 }
 
 const statusBadgeColors: Record<CollectionStatus, 'default' | 'success' | 'warning'> = {
   DRAFT: 'default',
   PUBLISHED: 'success',
-  ARCHIVED: 'warning',
 }
 
 export function CollectionsListPage() {
@@ -110,7 +108,6 @@ export function CollectionsListPage() {
     { value: '', label: 'All Status' },
     { value: 'DRAFT', label: 'Draft' },
     { value: 'PUBLISHED', label: 'Published' },
-    { value: 'ARCHIVED', label: 'Archived' },
   ]
 
   return (

@@ -1,5 +1,5 @@
 export type CollectionType = "TOP_LIST" | "GUIDE" | "COMPARISON";
-export type CollectionStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+export type CollectionStatus = "DRAFT" | "PUBLISHED" 
 
 export interface ICollectionItem {
   id: string;

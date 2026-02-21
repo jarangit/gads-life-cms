@@ -261,7 +261,6 @@ export function CollectionFormPage() {
   const statusOptions = [
     { value: "DRAFT", label: "Draft" },
     { value: "PUBLISHED", label: "Published" },
-    { value: "ARCHIVED", label: "Archived" },
   ];
 
   const categoryOptions = [

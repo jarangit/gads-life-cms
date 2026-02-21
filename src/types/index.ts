@@ -13,7 +13,7 @@ export interface SeoFields {
 }
 
 // Status
-export type ContentStatus = 'draft' | 'published' | 'archived'
+export type ContentStatus = 'draft' | 'published' 
 
 // Category
 export interface Category extends BaseEntity {

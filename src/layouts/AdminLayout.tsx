@@ -13,6 +13,7 @@ import {
   LogOut,
   Settings,
   User,
+  Newspaper,
 } from 'lucide-react'
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 
@@ -28,6 +29,7 @@ const navItems: NavItem[] = [
   { label: 'Brands', path: '/brands', icon: <Building2 className="h-5 w-5" /> },
   { label: 'Products', path: '/products', icon: <Package className="h-5 w-5" /> },
   { label: 'Collections', path: '/collections', icon: <ListOrdered className="h-5 w-5" /> },
+  { label: 'Articles', path: '/content-articles', icon: <Newspaper className="h-5 w-5" /> },
 ]
 
 export function AdminLayout() {

@@ -10,6 +10,8 @@ import {
   ProductFormPage,
   CollectionsListPage,
   CollectionFormPage,
+  ContentArticlesListPage,
+  ContentArticleFormPage,
 } from '@/pages'
 
 function App() {
@@ -38,6 +40,11 @@ function App() {
           <Route path="collections" element={<CollectionsListPage />} />
           <Route path="collections/new" element={<CollectionFormPage />} />
           <Route path="collections/:id/edit" element={<CollectionFormPage />} />
+
+          {/* Content Articles */}
+          <Route path="content-articles" element={<ContentArticlesListPage />} />
+          <Route path="content-articles/new" element={<ContentArticleFormPage />} />
+          <Route path="content-articles/:id/edit" element={<ContentArticleFormPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

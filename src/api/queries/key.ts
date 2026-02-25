@@ -19,4 +19,8 @@ export const qk = {
     ["reports-top-products", params ?? {}] as const,
   reportsTopPages: (params?: Record<string, string | number | boolean>) =>
     ["reports-top-pages", params ?? {}] as const,
+
+  contentArticles: (params?: Record<string, string | number | boolean>) =>
+    ["content-articles", params ?? {}] as const,
+  contentArticle: (id: string) => ["content-article", id] as const,
 };

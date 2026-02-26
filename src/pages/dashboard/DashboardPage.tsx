@@ -4,6 +4,7 @@ import {
   Tag,
   Building2,
   ListOrdered,
+  MessageSquareWarning,
   Plus,
   TrendingUp,
   BarChart3,
@@ -28,6 +29,8 @@ import { useCollections } from '@/api/queries/collection/list'
 import { useReportsOverview } from '@/api/queries/reports/overview'
 import { useReportsTopProducts } from '@/api/queries/reports/top-products'
 import { useReportsTopPages } from '@/api/queries/reports/top-pages'
+import { useFeedbackRequests } from '@/api/queries/feedback/list'
+import type { FeedbackRequestStatus, FeedbackRequestType } from '@/api/types/feedback'
 
 interface StatCardProps {
   title: string
@@ -97,6 +100,31 @@ export function DashboardPage() {
     limit: 5,
   })
 
+  const { data: feedbackData, isLoading: feedbackLoading } = useFeedbackRequests({
+    page: 1,
+    limit: 5,
+  })
+  const { data: feedbackNewData } = useFeedbackRequests({
+    page: 1,
+    limit: 1,
+    status: 'NEW',
+  })
+  const { data: feedbackInProgressData } = useFeedbackRequests({
+    page: 1,
+    limit: 1,
+    status: 'IN_PROGRESS',
+  })
+  const { data: feedbackResolvedData } = useFeedbackRequests({
+    page: 1,
+    limit: 1,
+    status: 'RESOLVED',
+  })
+  const { data: feedbackClosedData } = useFeedbackRequests({
+    page: 1,
+    limit: 1,
+    status: 'CLOSED',
+  })
+
   const totalProducts = productsData?.total ?? 0
   const totalCategories = categoriesData?.total ?? 0
   const totalBrands = brandsData?.length ?? 0
@@ -106,6 +134,13 @@ export function DashboardPage() {
   const recentCollections = collectionsData?.slice(0, 5) ?? []
   const topProducts = topProductsData?.items ?? []
   const topPages = topPagesData?.items ?? []
+  const recentFeedback = feedbackData?.items ?? []
+
+  const totalFeedback = feedbackData?.total ?? 0
+  const totalFeedbackNew = feedbackNewData?.total ?? 0
+  const totalFeedbackInProgress = feedbackInProgressData?.total ?? 0
+  const totalFeedbackDone =
+    (feedbackResolvedData?.total ?? 0) + (feedbackClosedData?.total ?? 0)
 
   const overviewSummary = overviewData?.summary
 
@@ -164,6 +199,51 @@ export function DashboardPage() {
         </Card>
       </div>
 
+      <div className="mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquareWarning className="h-5 w-5 text-blue-600" />
+              Feedback Priority
+            </CardTitle>
+            <Button as={Link} to="/feedback-requests" size="sm">
+              Manage Feedback
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <StatsSummary
+              className="sm:grid-cols-2 lg:grid-cols-4"
+              stats={[
+                {
+                  label: 'Total Requests',
+                  value: totalFeedback,
+                  icon: <MessageSquareWarning className="h-5 w-5" />,
+                  color: 'blue',
+                },
+                {
+                  label: 'New',
+                  value: totalFeedbackNew,
+                  icon: <MessageSquareWarning className="h-5 w-5" />,
+                  color: 'red',
+                },
+                {
+                  label: 'In Progress',
+                  value: totalFeedbackInProgress,
+                  icon: <BarChart3 className="h-5 w-5" />,
+                  color: 'yellow',
+                },
+                {
+                  label: 'Resolved/Closed',
+                  value: totalFeedbackDone,
+                  icon: <Eye className="h-5 w-5" />,
+                  color: 'green',
+                },
+              ]}
+            />
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Stats */}
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -197,6 +277,53 @@ export function DashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
+        {/* Recent Feedback */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Recent Feedback Requests</CardTitle>
+            <Button as={Link} to="/feedback-requests" size="sm">
+              View all feedback
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {feedbackLoading && <LoadingSpinner size="sm" />}
+              {!feedbackLoading && recentFeedback.length === 0 && (
+                <EmptyState
+                  title="No feedback yet"
+                  description="Feedback from users will appear here for quick triage."
+                />
+              )}
+              {!feedbackLoading &&
+                recentFeedback.map((feedback) => (
+                  <Link
+                    key={feedback.id}
+                    to="/feedback-requests"
+                    className="block rounded-lg border border-slate-200 p-3 transition-colors hover:bg-slate-50"
+                  >
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                          {formatFeedbackType(feedback.type)}
+                        </span>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${feedbackStatusClass[feedback.status]}`}>
+                          {formatFeedbackStatus(feedback.status)}
+                        </span>
+                      </div>
+                      <span className="text-xs text-slate-400">{formatDateTime(feedback.createdAt)}</span>
+                    </div>
+                    <p className="font-medium text-slate-900">{feedback.subject || 'No subject'}</p>
+                    <p className="mt-1 line-clamp-2 text-sm text-slate-600">{feedback.message}</p>
+                    <p className="mt-2 text-xs text-slate-500">
+                      {feedback.name || 'Anonymous'}
+                      {feedback.email ? ` • ${feedback.email}` : ''}
+                    </p>
+                  </Link>
+                ))}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Recent Products */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -366,6 +493,47 @@ export function DashboardPage() {
       </div>
     </div>
   )
+}
+
+const feedbackStatusClass: Record<FeedbackRequestStatus, string> = {
+  NEW: 'bg-red-50 text-red-700',
+  IN_PROGRESS: 'bg-blue-50 text-blue-700',
+  RESOLVED: 'bg-green-50 text-green-700',
+  CLOSED: 'bg-slate-100 text-slate-700',
+}
+
+function formatFeedbackType(type: FeedbackRequestType) {
+  switch (type) {
+    case 'ISSUE':
+      return 'Issue'
+    case 'WRONG_INFORMATION':
+      return 'Wrong information'
+    case 'MORE_INFORMATION':
+      return 'More information'
+    default:
+      return type
+  }
+}
+
+function formatFeedbackStatus(status: FeedbackRequestStatus) {
+  switch (status) {
+    case 'NEW':
+      return 'New'
+    case 'IN_PROGRESS':
+      return 'In progress'
+    case 'RESOLVED':
+      return 'Resolved'
+    case 'CLOSED':
+      return 'Closed'
+    default:
+      return status
+  }
+}
+
+function formatDateTime(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+  return date.toLocaleString()
 }
 
 interface QuickActionCardProps {

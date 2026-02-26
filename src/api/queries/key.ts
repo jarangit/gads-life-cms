@@ -19,4 +19,7 @@ export const qk = {
     ["reports-top-products", params ?? {}] as const,
   reportsTopPages: (params?: Record<string, string | number | boolean>) =>
     ["reports-top-pages", params ?? {}] as const,
+
+  feedbackRequests: (params?: Record<string, string | number | boolean>) =>
+    ["feedback-requests", params ?? {}] as const,
 };

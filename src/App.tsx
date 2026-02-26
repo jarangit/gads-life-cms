@@ -10,6 +10,7 @@ import {
   ProductFormPage,
   CollectionsListPage,
   CollectionFormPage,
+  FeedbackRequestsPage,
 } from '@/pages'
 
 function App() {
@@ -38,6 +39,9 @@ function App() {
           <Route path="collections" element={<CollectionsListPage />} />
           <Route path="collections/new" element={<CollectionFormPage />} />
           <Route path="collections/:id/edit" element={<CollectionFormPage />} />
+
+          {/* Feedback Requests */}
+          <Route path="feedback-requests" element={<FeedbackRequestsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

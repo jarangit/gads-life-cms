@@ -23,4 +23,6 @@ export const qk = {
   contentArticles: (params?: Record<string, string | number | boolean>) =>
     ["content-articles", params ?? {}] as const,
   contentArticle: (id: string) => ["content-article", id] as const,
+  feedbackRequests: (params?: Record<string, string | number | boolean>) =>
+    ["feedback-requests", params ?? {}] as const,
 };

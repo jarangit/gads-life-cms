@@ -12,6 +12,7 @@ import {
   CollectionFormPage,
   ContentArticlesListPage,
   ContentArticleFormPage,
+  FeedbackRequestsPage,
 } from '@/pages'
 
 function App() {
@@ -45,6 +46,8 @@ function App() {
           <Route path="content-articles" element={<ContentArticlesListPage />} />
           <Route path="content-articles/new" element={<ContentArticleFormPage />} />
           <Route path="content-articles/:id/edit" element={<ContentArticleFormPage />} />
+          {/* Feedback Requests */}
+          <Route path="feedback-requests" element={<FeedbackRequestsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

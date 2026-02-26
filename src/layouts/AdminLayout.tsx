@@ -7,6 +7,7 @@ import {
   Tag,
   Building2,
   ListOrdered,
+  MessageSquareWarning,
   Menu,
   X,
   ChevronDown,
@@ -30,6 +31,11 @@ const navItems: NavItem[] = [
   { label: 'Products', path: '/products', icon: <Package className="h-5 w-5" /> },
   { label: 'Collections', path: '/collections', icon: <ListOrdered className="h-5 w-5" /> },
   { label: 'Articles', path: '/content-articles', icon: <Newspaper className="h-5 w-5" /> },
+  {
+    label: 'Feedback',
+    path: '/feedback-requests',
+    icon: <MessageSquareWarning className="h-5 w-5" />,
+  },
 ]
 
 export function AdminLayout() {
